@@ -8,7 +8,6 @@ extern crate regex;
 use serenity::client::{Client, EventHandler};
 use serenity::framework::standard::{StandardFramework, help_commands};
 use serenity::model::{channel::Message, id::ChannelId};
-use serenity::utils::Colour;
 use std::env;
 use std::fmt::Display;
 use regex::Regex;
@@ -83,11 +82,24 @@ command!(eval_polish(_context, message, args) {
 
 command!(exec(_context, message) {
     lazy_static! {
-        static ref RE: Regex = Regex::new("^.*exec.*```(.*)\n(.*)```").unwrap();
+        static ref RE: Regex = Regex::new("(?s)^.*exec.*```([a-zA-Z0-9_\\-+]+)\n(.+)\n```").unwrap();
     }
 
-    println!("{:?}", &message.content);
-    println!("{:?}", RE.captures(&message.content));
+    let captures = match RE.captures(&message.content) {
+        Some(x) => x,
+        // Presumably just returning the Result from send_error should work, but it doesn't.
+        None => {
+            send_error(&message.channel_id, r#"Invalid format; expected a codeblock with a language set."#)?;
+            return Ok(());
+        }
+    };
+
+    let code = &captures[2];
+    let lang = &captures[1];
+
+    match lang {
+        _ => send_error(&message.channel_id, &format!("Unknown language `{}`.", lang))?
+    };
 });
 
 // BELOW THIS LINE BE DRAGONS
@@ -161,12 +173,14 @@ command!(search(_context, message, args) {
                 }
             }
         },
-        ddg::Type::Exclusive => send_search_result(channel, SearchResult {
-            title: query,
-            text: String::from("[see link]"),
-            image: None,
-            url: Some(result.abstract_url)
-        })?,
+        ddg::Type::Exclusive => { 
+            send_search_result(channel, SearchResult {
+                title: query,
+                text: result.redirect.clone(),
+                image: None,
+                url: Some(result.redirect)
+            })?
+        },
         ddg::Type::Nothing => send_error(channel, "No results.")?,
         other => send_error(channel, &format!("{:?} - unrecognized result type", other))?
     }
