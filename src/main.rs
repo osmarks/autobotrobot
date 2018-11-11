@@ -138,7 +138,8 @@ command!(exec(_context, message) {
     };
 
     let code = &captures[2];
-    let lang = &captures[1];
+    let lang = captures[1].to_lowercase();
+    let lang = lang.as_str();
     let channel = &message.channel_id;
 
     match lang {
