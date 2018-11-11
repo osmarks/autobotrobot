@@ -125,7 +125,7 @@ fn execute_and_respond(channel: &ChannelId, command: &str, code: &str) -> Result
 
 command!(exec(_context, message) {
     lazy_static! {
-        static ref RE: Regex = Regex::new("(?s)^.*exec.*```([a-zA-Z0-9_\\-+]+)\n(.+)\n```").unwrap();
+        static ref RE: Regex = Regex::new("(?s)^.*exec.*```([a-zA-Z0-9_\\-+]+)\n(.+)```").unwrap();
     }
 
     let captures = match RE.captures(&message.content) {
