@@ -36,7 +36,7 @@ pub fn main() {
         .command("ping", |c| c.cmd(ping).desc("Says Pong.").known_as("test"))
         .command("search", |c| c.cmd(search).desc("Executes a search using DuckDuckGo.").known_as("ddg"))
         .command("eval", |c| c.cmd(eval).desc("Evaluates an arithmetic expression.").known_as("calc"))
-        .command("exec", |c| c.cmd(exec).desc("Executes code passed in codeblock with language set via Coliru. Supported languages: python, shell."))
+        .command("exec", |c| c.cmd(exec).desc("Executes code passed in codeblock with language set via Coliru. Supported languages: `python`, `shell`, `haskell`, `lua`."))
         .command("eval-polish", |c| c.cmd(eval_polish).desc("Evaluates a Polish-notation arithmetic expression.")));
 
     if let Err(why) = client.start() {
