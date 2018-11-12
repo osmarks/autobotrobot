@@ -32,11 +32,12 @@ pub fn main() {
             .case_insensitivity(true)
             .on_mention(true))
         .help(help_commands::with_embeds)
-        .before(|_context, message, _command| { println!("> {}", message.content); true })
+        .before(|_context, message, _command| { eprintln!("> {}", message.content); true })
         .command("ping", |c| c.cmd(ping).desc("Says Pong.").known_as("test"))
         .command("search", |c| c.cmd(search).desc("Executes a search using DuckDuckGo.").known_as("ddg"))
         .command("eval", |c| c.cmd(eval).desc("Evaluates an arithmetic expression.").known_as("calc"))
         .command("exec", |c| c.cmd(exec).desc("Executes code passed in codeblock with language set via Coliru. Supported languages: `python`, `shell`, `haskell`, `lua`."))
+        .command("fortune", |c| c.cmd(fortune).desc("Displays a random `fortune`."))
         .command("eval-polish", |c| c.cmd(eval_polish).desc("Evaluates a Polish-notation arithmetic expression.")));
 
     if let Err(why) = client.start() {
@@ -150,6 +151,12 @@ command!(exec(_context, message) {
         "haskell" | "hs" => execute_and_respond(channel, "mv main.cpp main.hs && runhaskell main.hs", code),
         _ => send_error(channel, &format!("Unknown language `{}`.", lang))
     }?;
+});
+
+command!(fortune(_context, message) {
+    let output = std::process::Command::new("fortune").output()?.stdout;
+    let output = String::from_utf8(output)?;
+    message.channel_id.send_message(|m| m.content(output))?;
 });
 
 // BELOW THIS LINE BE DRAGONS
