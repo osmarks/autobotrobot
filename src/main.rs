@@ -111,6 +111,7 @@ fn to_code_block(s: &str) -> String {
 }
 
 fn execute_and_respond(channel: &ChannelId, command: &str, code: &str) -> Result<(), serenity::Error> {
+    channel.broadcast_typing()?;
     let coliru_result = execute_coliru(command, code);
 
     match coliru_result {
