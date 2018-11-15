@@ -220,15 +220,20 @@ command!(search(_context, message, args) {
             url: none_if_empty(result.abstract_url)
         })?,
         ddg::Type::Disambiguation => {
+            let mut results = vec![];
             for related_topic in result.related_topics {
                 for topic in get_topics(related_topic) {
-                    send_search_result(channel, SearchResult {
+                    results.push(topic);
+                }
+            }
+
+            for topic in results.drain(..5) {
+                send_search_result(channel, SearchResult {
                     url: none_if_empty(topic.first_url),
                     image: none_if_empty(topic.icon.url),
                     title: query.clone(),
                     text: topic.text
                 })?;
-                }
             }
         },
         ddg::Type::Exclusive => { 
