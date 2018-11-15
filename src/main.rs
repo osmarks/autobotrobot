@@ -32,7 +32,6 @@ pub fn main() {
             .case_insensitivity(true)
             .on_mention(true))
         .help(help_commands::with_embeds)
-        .before(|_context, message, _command| { eprintln!("> {}", message.content); true })
         .command("ping", |c| c.cmd(ping).desc("Says Pong.").known_as("test"))
         .command("search", |c| c.cmd(search).desc("Executes a search using DuckDuckGo.").known_as("ddg"))
         .command("eval", |c| c.cmd(eval).desc("Evaluates an arithmetic expression.").known_as("calc"))
