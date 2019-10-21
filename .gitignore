@@ -1,2 +1,3 @@
-.env
-target
+config.toml
+bot-data.json
+__pycache__
