@@ -67,12 +67,6 @@ async def delete(ctx, *, raw_target):
         deleted = data.get("deleted", [])
         data["deleted"] = deleted + [target]
         save_data()
-        try: __builtins__.__delattr__(target)
-        except: pass
-        try: del globals()[target]
-        except: pass
-        try: del locals()[target]
-        except: pass
         await ctx.send(f"Deleted {target} successfully.")
 
 @bot.command(help="View recently deleted things, optionally matching a filter.")
