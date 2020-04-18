@@ -70,7 +70,7 @@ async def delete(ctx, *, raw_target):
 @bot.command(help="View recently deleted things, optionally matching a filter.")
 async def list_deleted(ctx, search=None):
     acc = "Recently deleted:\n"
-    if search: acc = f"Recently deleted (matching {search}"
+    if search: acc = f"Recently deleted (matching {search}):\n"
     csr = None
     if search:
         csr = database.execute("SELECT * FROM deleted_items WHERE item LIKE ? ORDER BY timestamp DESC LIMIT 100", (f"%{search}%",))
