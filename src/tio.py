@@ -9,7 +9,8 @@ def languages():
     return tio.query_languages()
 
 aliases = {
-    "python": "python3"
+    "python": "python3",
+    "javascript": "javascript-node"
 }
 
 client = http3.AsyncClient()

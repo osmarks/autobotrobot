@@ -11,6 +11,16 @@ CREATE TABLE deleted_items (
 """,
 """
 CREATE INDEX deleted_items_timestamps ON deleted_items(timestamp);
+""",
+"""
+CREATE TABLE reminders (
+    id INTEGER PRIMARY KEY,
+    remind_timestamp INTEGER NOT NULL,
+    created_timestamp INTEGER NOT NULL,
+    reminder TEXT NOT NULL,
+    expired INTEGER NOT NULL,
+    extra TEXT NOT NULL
+);
 """
 ]
 
