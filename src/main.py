@@ -77,13 +77,13 @@ async def list_deleted(ctx, search=None):
         csr = database.execute("SELECT * FROM deleted_items ORDER BY timestamp DESC LIMIT 100")
     async with csr as cursor:
         async for row in cursor:
-            to_add = "- " + row[2] + "\n"
+            to_add = "- " + row[2].replace("```", "[REDACTED]") + "\n"
             if len(acc + to_add) > 2000:
                 break
             acc += to_add
     await ctx.send(acc)
 
-# Python, for some *very intelligent reason*, makes the default ArgumetParser exit the program on error.
+# Python, for some *very intelligent reason*, makes the default ArgumentParser exit the program on error.
 # This is obviously undesirable behavior in a Discord bot, so we override this.
 class NonExitingArgumentParser(argparse.ArgumentParser):
     def exit(self, status=0, message=None):
@@ -192,10 +192,15 @@ AutoBotRobot is open source - the code is available at <https://github.com/osmar
 You can also invite it to your server: <https://discordapp.com/oauth2/authorize?&client_id=509849474647064576&scope=bot&permissions=68608>
 """)
 
-@bot.group()
-async def magic(ctx):
+async def admin_check(ctx):
     if not await bot.is_owner(ctx.author):
-        return await ctx.send(embed=error_embed(f"{ctx.author.name} is not in the sudoers file. This incident has been reported."))
+        await ctx.send(embed=error_embed(f"{ctx.author.name} is not in the sudoers file. This incident has been reported."))
+        return False
+    return True
+
+@bot.group()
+@commands.check(admin_check)
+async def magic(ctx):
     if ctx.invoked_subcommand == None:
         return await ctx.send("Invalid magic command.")
 
@@ -209,7 +214,8 @@ async def py(ctx, *, code):
             "ctx": ctx,
         }
         result = await asyncio.wait_for(util.async_exec(code, loc, globals()), timeout=5.0)
-        await ctx.send("```\n" + repr(result).replace("```", "\\`\\`\\`")[:1900] + "\n```")
+        if result != None:
+            await ctx.send("```\n" + repr(result).replace("```", "\\`\\`\\`")[:1900] + "\n```")
     except TimeoutError:
         await ctx.send(embed=error_embed("Timed out."))
     except BaseException as e:
@@ -218,13 +224,16 @@ async def py(ctx, *, code):
 @magic.command(rest_is_raw=True)
 async def sql(ctx, *, code):
     code = util.extract_codeblock(code)
-    csr = database.execute(code)
-    out = ""
-    async with csr as cursor:
-        async for row in cursor:
-            out += "`" + " ".join(map(repr, row)) + "`\n"
-    await ctx.send(out[:1999])
-    await database.commit()
+    try:
+        csr = database.execute(code)
+        out = ""
+        async with csr as cursor:
+            async for row in cursor:
+                out += " ".join(map(repr, row)) + "\n"
+        await ctx.send("```\n" + out[:1990] + "```")
+        await database.commit()
+    except Exception as e:
+        await ctx.send(embed=error_embed("```\n" + traceback.format_exc() + "```"))
 
 @bot.event
 async def on_ready():
