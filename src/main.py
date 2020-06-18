@@ -8,6 +8,7 @@ import re
 import asyncio
 import json
 import argparse
+import traceback
 from datetime import timezone, datetime
 
 import tio
@@ -23,7 +24,7 @@ config = toml.load(open("config.toml", "r"))
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(asctime)s %(message)s", datefmt="%H:%M:%S %d/%m/%Y")
 
-bot = commands.Bot(command_prefix='++', description="AutoBotRobot, the most useless bot in the known universe.", case_insensitive=True)
+bot = commands.Bot(command_prefix=config["prefix"], description="AutoBotRobot, the most useless bot in the known universe.", case_insensitive=True)
 bot._skip_check = lambda x, y: False
 
 def make_embed(*, fields=[], footer_text=None, **kwargs):
@@ -136,7 +137,9 @@ async def supported_langs(ctx, search=None):
     if acc == "": acc = "No results."
     await ctx.send(acc)
 
-@bot.command(help="Set a reminder. All times are UTC. Reminders are only checked once per minute.", rest_is_raw=True)
+@bot.command(brief="Set a reminder to be reminded about later.", rest_is_raw=True, help="""Sets a reminder which you will (probably) be reminded about at/after the specified time.
+All times are UTC.
+Reminders are checked every minute, so while precise times are not guaranteed, reminders should under normal conditions be received within 2 minutes of what you specify.""")
 async def remind(ctx, time, *, reminder):
     reminder = reminder.strip()
     if len(reminder) > 512:
@@ -147,7 +150,11 @@ async def remind(ctx, time, *, reminder):
         "channel_id": ctx.message.channel.id,
         "original_time_spec": time
     }
-    time = util.parse_time(time)
+    try:
+        time = util.parse_time(time)
+    except:
+        await ctx.send(embed=error_embed("Invalid time"))
+        return
     await database.execute("INSERT INTO reminders (remind_timestamp, created_timestamp, reminder, expired, extra) VALUES (?, ?, ?, ?, ?)", 
         (time.timestamp(), timestamp(), reminder, 0, json.dumps(extra_data)))
     await database.commit()
@@ -176,10 +183,53 @@ async def remind_worker():
         await database.execute("UPDATE reminders SET expired = 1 WHERE id = ?", (expiry_id,))
     await database.commit()
 
+@bot.command(help="Get some information about the bot.")
+async def about(ctx):
+    await ctx.send("""**AutoBotRobot: The least useful Discord bot ever designed.**
+AutoBotRobot has many features, but not necessarily any practical ones.
+It can execute code via TIO.run, do reminders, print fortunes, and not any more!
+AutoBotRobot is open source - the code is available at <https://github.com/osmarks/autobotrobot> - and you could run your own instance if you wanted to and could get around the complete lack of user guide or documentation.
+You can also invite it to your server: <https://discordapp.com/oauth2/authorize?&client_id=509849474647064576&scope=bot&permissions=68608>
+""")
+
+@bot.group()
+async def magic(ctx):
+    if not await bot.is_owner(ctx.author):
+        return await ctx.send(embed=error_embed(f"{ctx.author.name} is not in the sudoers file. This incident has been reported."))
+    if ctx.invoked_subcommand == None:
+        return await ctx.send("Invalid magic command.")
+
+@magic.command(rest_is_raw=True)
+async def py(ctx, *, code):
+    code = util.extract_codeblock(code)
+    try:
+        loc = {
+            **locals(),
+            "bot": bot,
+            "ctx": ctx,
+        }
+        result = await asyncio.wait_for(util.async_exec(code, loc, globals()), timeout=5.0)
+        await ctx.send("```\n" + repr(result).replace("```", "\\`\\`\\`")[:1900] + "\n```")
+    except TimeoutError:
+        await ctx.send(embed=error_embed("Timed out."))
+    except BaseException as e:
+        await ctx.send("Error:\n```\n" + traceback.format_exc().replace("```", "\\`\\`\\`")[:1900] + "\n```")
+
+@magic.command(rest_is_raw=True)
+async def sql(ctx, *, code):
+    code = util.extract_codeblock(code)
+    csr = database.execute(code)
+    out = ""
+    async with csr as cursor:
+        async for row in cursor:
+            out += "`" + " ".join(map(repr, row)) + "`\n"
+    await ctx.send(out[:1999])
+    await database.commit()
+
 @bot.event
 async def on_ready():
     logging.info("Connected as " + bot.user.name)
-    await bot.change_presence(status=discord.Status.online, activity=discord.Activity(type=discord.ActivityType.listening, name="commands beginning with ++"))
+    await bot.change_presence(status=discord.Status.online, activity=discord.Activity(type=discord.ActivityType.listening, name=f"commands beginning with {config['prefix']}"))
     remind_worker.start()
 
 async def run_bot():
