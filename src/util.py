@@ -3,17 +3,18 @@ import datetime
 import parsedatetime
 import ast
 import copy
+import random
 from dateutil.relativedelta import relativedelta
 
 # from here: https://github.com/Rapptz/RoboDanny/blob/18b92ae2f53927aedebc25fb5eca02c8f6d7a874/cogs/utils/time.py
 short_timedelta_regex = re.compile("""
-(?:(?P<years>[0-9]{1,8})(?:years?|y))?             # e.g. 2y
-(?:(?P<months>[0-9]{1,8})(?:months?|mo))?     # e.g. 2months
-(?:(?P<weeks>[0-9]{1,8})(?:weeks?|w))?        # e.g. 10w
-(?:(?P<days>[0-9]{1,8})(?:days?|d))?          # e.g. 14d
-(?:(?P<hours>[0-9]{1,8})(?:hours?|h))?        # e.g. 12h
-(?:(?P<minutes>[0-9]{1,8})(?:minutes?|m))?    # e.g. 10m
-(?:(?P<seconds>[0-9]{1,8})(?:seconds?|s))?    # e.g. 15s """, re.VERBOSE)
+(?:(?P<years>[0-9]{1,12})(?:years?|y))?        # e.g. 2y
+(?:(?P<months>[0-9]{1,12})(?:months?|mo))?     # e.g. 2months
+(?:(?P<weeks>[0-9]{1,12})(?:weeks?|w))?        # e.g. 10w
+(?:(?P<days>[0-9]{1,12})(?:days?|d))?          # e.g. 14d
+(?:(?P<hours>[0-9]{1,12})(?:hours?|h))?        # e.g. 12h
+(?:(?P<minutes>[0-9]{1,12})(?:minutes?|m))?    # e.g. 10m
+(?:(?P<seconds>[0-9]{1,12})(?:seconds?|s))?    # e.g. 15s """, re.VERBOSE)
 
 def parse_short_timedelta(text):
     match = short_timedelta_regex.fullmatch(text)
@@ -71,3 +72,37 @@ async def async_exec(code, loc, glob):
 
     exec(compile(wrapper, "<repl>", "exec"), loc, glob)
     return await (loc.get("repl_coroutine") or glob.get("repl_coroutine"))()
+
+# https://github.com/LyricLy/Esobot/blob/bcc9e548c84ea9b23fc832d0b0aaa8288de64886/cogs/general.py
+lyrictable_raw = {
+            "a": "а",
+            "c": "с",
+            "e": "е",
+            "s": "ѕ",
+            "i": "і",
+            "j": "ј",
+            "o": "о",
+            "p": "р",
+            "y": "у",
+            "x": "х"
+        }
+lyrictable = str.maketrans({v: k for k, v in lyrictable_raw.items()})
+
+apioprefixes = ["cryo", "meta", "chrono", "contra", "ortho", "macro", "micro"]
+apioinfixes = ["cryo", "pyro", "chrono", "meta", "anarcho", "arachno", "aqua", 
+    "hydro", "radio", "xeno", "morto", "thanato", "memeto", "contra", "umbra", "macrono"]
+apiosuffixes = ["hazard", "form"]
+
+def apioform():
+    out = ""
+    if random.randint(0, 4) == 0:
+        out += random.choice(apioprefixes)
+    out += "apio"
+    while True:
+        out += random.choice(apioinfixes)
+        if random.randint(0, 1) == 0: break
+    out += random.choice(apiosuffixes)
+    return out
+
+def unlyric(text):
+    return text.translate(lyrictable).replace("\u200b", "")
