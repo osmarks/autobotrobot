@@ -179,6 +179,7 @@ async def remind(ctx, time, *, reminder):
         "author_id": ctx.author.id,
         "channel_id": ctx.message.channel.id,
         "message_id": ctx.message.id,
+        "guild_id": ctx.message.guild and ctx.message.guild.id,
         "original_time_spec": time
     }
     try:
@@ -187,9 +188,43 @@ async def remind(ctx, time, *, reminder):
         await ctx.send(embed=error_embed("Invalid time"))
         return
     await database.execute("INSERT INTO reminders (remind_timestamp, created_timestamp, reminder, expired, extra) VALUES (?, ?, ?, ?, ?)", 
-        (time.timestamp(), timestamp(), reminder, 0, json.dumps(extra_data)))
+        (time.timestamp(), timestamp(), reminder, 0, json.dumps(extra_data, separators=(',', ':'))))
     await database.commit()
     await ctx.send(f"Reminder scheduled for {util.format_time(time)}.")
+
+async def send_to_channel(info, text):
+    channel = bot.get_channel(info["channel_id"])
+    if not channel: raise Exception(f"channel {info['channel_id']} unavailable/nonexistent")
+    await channel.send(text)
+
+async def send_by_dm(info, text):
+    user = bot.get_user(info["author_id"])
+    if not user: raise Exception(f"user {info['author_id']} unavailable/nonexistent")
+    if not user.dm_channel: await user.create_dm()
+    await user.dm_channel.send(text)
+
+async def send_to_guild(info, text):
+    guild = bot.get_guild(info["guild_id"])
+    member = guild.get_member(info["author_id"])
+    self = guild.get_member(bot.user.id)
+    # if member is here, find a channel they can read and the bot can send in
+    if member:
+        for chan in guild.text_channels:
+            if chan.permissions_for(member).read_messages and chan.permissions_for(self).send_messages:
+                await chan.send(text)
+                return
+    # if member not here or no channel they can read messages in, send to any available channel
+    for chan in guild.text_channels:
+        if chan.permissions_for(self).send_messages:
+            await chan.send(text)
+            return
+    raise Exception(f"guild {info['author_id']} has no (valid) channels")
+
+remind_send_methods = [
+    ("original channel", send_to_channel),
+    ("direct message", send_by_dm),
+    ("originating guild", send_to_guild)
+]
 
 @tasks.loop(seconds=60)
 async def remind_worker():
@@ -204,9 +239,14 @@ async def remind_worker():
                 extra = json.loads(extra)
                 uid = extra["author_id"]
                 text = f"<@{uid}> Reminder queued at {util.format_time(created_timestamp)}: {reminder_text}"
-                channel = bot.get_channel(extra["channel_id"])
-                await channel.send(text)
-                to_expire.append(rid)
+
+                for method_name, func in remind_send_methods:
+                    print("trying", method_name, rid)
+                    try:
+                        await func(extra, text)
+                        to_expire.append(rid)
+                        break
+                    except Exception as e: logging.warning("failed to send %d to %s", rid, method_name, exc_info=e)
             except Exception as e:
                 logging.warning("Could not send reminder %d", rid, exc_info=e)
     for expiry_id in to_expire:
@@ -251,7 +291,7 @@ async def random_choice(ctx, *choices):
         choicelist.pop(0)
     except: pass
 
-    if samples > 1e5:
+    if samples > 1e4:
         await ctx.send("No.")
         return
 
