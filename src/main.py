@@ -43,6 +43,7 @@ async def on_message(message):
 async def on_command_error(ctx, err):
     #print(ctx, err)
     if isinstance(err, (commands.CommandNotFound, commands.CheckFailure)): return
+    if isinstance(err, commands.MissingRequiredArgument): return await ctx.send(embed=util.error_embed(str(err)))
     try:
         trace = re.sub("\n\n+", "\n", "\n".join(traceback.format_exception(err, err, err.__traceback__)))
         #print(trace)
