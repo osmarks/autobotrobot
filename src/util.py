@@ -5,6 +5,13 @@ import ast
 import copy
 import random
 from dateutil.relativedelta import relativedelta
+import json
+import discord
+import toml
+
+config = toml.load(open("config.toml", "r"))
+
+def timestamp(): return int(datetime.datetime.now(tz=datetime.timezone.utc).timestamp())
 
 # from here: https://github.com/Rapptz/RoboDanny/blob/18b92ae2f53927aedebc25fb5eca02c8f6d7a874/cogs/utils/time.py
 short_timedelta_regex = re.compile("""
@@ -20,11 +27,11 @@ def parse_short_timedelta(text):
     match = short_timedelta_regex.fullmatch(text)
     if match is None or not match.group(0): raise ValueError("parse failed")
     data = { k: int(v) for k, v in match.groupdict(default=0).items() }
-    return datetime.datetime.utcnow() + relativedelta(**data)
+    return datetime.datetime.now(tz=datetime.timezone.utc) + relativedelta(**data)
 
 cal = parsedatetime.Calendar()
 def parse_humantime(text):
-    time_struct, parse_status = cal.parse(text)
+    time_struct, parse_status = cal.nlp(text)
     if parse_status == 1: return datetime.datetime(*time_struct[:6])
     else: raise ValueError("parse failed")
 
@@ -39,6 +46,22 @@ def parse_time(text):
 
 def format_time(dt):
     return dt.strftime("%H:%M:%S %d/%m/%Y")
+
+timeparts = (
+    ("y", "years"),
+    ("mo", "months"),
+    ("d", "days"),
+    ("m", "minutes"),
+    ("s", "seconds")
+)
+
+def format_timedelta(from_, to):
+    d = relativedelta(to, from_)
+    out = "0s" if d.seconds == 0 else ""
+    for short, attr in timeparts:
+        x = getattr(d, attr)
+        if x != 0: out += str(x) + short
+    return out
 
 CODEBLOCK_REGEX = "^[^`]*```[a-zA-Z0-9_\-+]*\n(.+)```$"
 CODELINE_REGEX = "^[^`]*`(.*)`$"
@@ -71,6 +94,20 @@ async def async_exec(code, loc, glob):
 
     exec(compile(wrapper, "<repl>", "exec"), loc, glob)
     return await (loc.get("repl_coroutine") or glob.get("repl_coroutine"))()
+
+def make_embed(*, fields=(), footer_text=None, **kwargs):
+    embed = discord.Embed(**kwargs)
+    for field in fields:
+        if len(field) > 2:
+            embed.add_field(name=field[0], value=field[1], inline=field[2])
+        else:
+            embed.add_field(name=field[0], value=field[1], inline=False)
+    if footer_text:
+        embed.set_footer(text=footer_text)
+    return embed
+
+def error_embed(msg, title="Error"): return make_embed(color=config["colors"]["error"], description=msg, title=title)
+def info_embed(title, msg, fields=()): return make_embed(color=config["colors"]["info"], description=msg, title=title, fields=fields)
 
 # https://github.com/LyricLy/Esobot/blob/bcc9e548c84ea9b23fc832d0b0aaa8288de64886/cogs/general.py
 lyrictable_raw = {
@@ -134,3 +171,8 @@ def apioform():
 
 def unlyric(text):
     return text.translate(lyrictable).replace("\u200b", "")
+
+def gen_codeblock(content):
+    return "```\n" + content.replace("```", "\\`\\`\\`")[:1900] + "\n```"
+
+def json_encode(x): return json.dumps(x, separators=(',', ':'))

@@ -21,16 +21,44 @@ CREATE TABLE reminders (
     expired INTEGER NOT NULL,
     extra TEXT NOT NULL
 );
+""",
+"""
+CREATE TABLE telephone_config (
+    id TEXT PRIMARY KEY,
+    guild_id INTEGER NOT NULL,
+    channel_id INTEGER NOT NULL UNIQUE,
+    webhook TEXT
+);
+""",
+"""
+CREATE TABLE calls (
+    from_id TEXT NOT NULL REFERENCES telephone_config(id) UNIQUE,
+    to_id TEXT NOT NULL REFERENCES telephone_config(id),
+    start_time INTEGER NOT NULL
+);
 """
 ]
 
+async def execute_fetchone(self, sql, params=None):
+    if params == None: params = ()
+    return await self._execute(self._fetchone, sql, params)
+
+def _fetchone(self, sql, params):
+    cursor = self._conn.execute(sql, params)
+    return cursor.fetchone()
+
 async def init(db_path):
     db = await aiosqlite.connect(db_path)
+    await db.execute("PRAGMA foreign_keys = ON")
+
+    db.row_factory = aiosqlite.Row
+    aiosqlite.Connection._fetchone = _fetchone
+    aiosqlite.Connection.execute_fetchone = execute_fetchone
 
     version = (await (await db.execute("PRAGMA user_version")).fetchone())[0]
     for i in range(version, len(migrations)):
         await db.executescript(migrations[i])
-        # Normally this would be a terrible idea because of SQL injection.
+        # Normally interpolating like this would be a terrible idea because of SQL injection.
         # However, in this case there is not an obvious alternative (the parameter-based way apparently doesn't work)
         # and i + 1 will always be an integer anyway
         await db.execute(f"PRAGMA user_version = {i + 1}")
