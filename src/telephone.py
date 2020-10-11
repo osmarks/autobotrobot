@@ -24,9 +24,10 @@ def setup(bot):
         return ctx.author.permissions_in(ctx.channel).manage_channels or (await bot.is_owner(ctx.author))
 
     @bot.group(name="apiotelephone", aliases=["tel", "tele", "telephone", "apiotel"], brief="ApioTelephone lets you 'call' other servers.", help=f"""
-    Call other (participating) servers with ApioTelephone! To start, do {bot.command_prefix} tel setup (requires Manage Channels).
+    Call other (participating) servers with ApioTelephone! To configure a channel for telephony, do `{bot.command_prefix}tel setup` (requires Manage Channels).
     It's recommended that you give the bot Manage Webhooks permissions in this channel so that it can use webhook calls mode.
-
+    To place a call, do `{bot.command_prefix}tel dial [number]` - the other end has to accept the call.
+    When you want to end a call, do {bot.command_prefix}tel disconnect.
     """)
     async def telephone(ctx): pass
 
