@@ -146,7 +146,7 @@ async def supported_langs(ctx, search=None):
     if acc == "": acc = "No results."
     await ctx.send(acc)
 
-@bot.command(help="Get some information about the bot.")
+@bot.command(help="Get some information about the bot.", aliases=["invite"])
 async def about(ctx):
     await ctx.send("""**AutoBotRobot: The least useful Discord bot ever designed.**
 AutoBotRobot has many features, but not necessarily any practical ones.
