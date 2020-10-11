@@ -21,7 +21,7 @@ channel_calls_cache = {}
 
 def setup(bot):
     async def server_mod_check(ctx):
-        return ctx.author.permissions_in(ctx.channel).manage_channels or bot.is_owner(ctx.author)
+        return ctx.author.permissions_in(ctx.channel).manage_channels or (await bot.is_owner(ctx.author))
 
     @bot.group(name="apiotelephone", aliases=["tel", "tele", "telephone", "apiotel"], brief="ApioTelephone lets you 'call' other servers.", help=f"""
     Call other (participating) servers with ApioTelephone! To start, do {bot.command_prefix} tel setup (requires Manage Channels).
