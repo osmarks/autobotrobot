@@ -125,6 +125,7 @@ def setup(bot):
 
         def check(re, u): return (str(re.emoji) == "✅" or str(re.emoji) == "❎") and u != bot.user
 
+        reaction = None
         # wait until someone clicks the reactions, or time out and say so
         try:
             reaction, user = await bot.wait_for("reaction_add", timeout=util.config["call_timeout"], check=check)
@@ -135,7 +136,7 @@ def setup(bot):
             )
 
         await asyncio.gather(call_message.remove_reaction("✅", bot.user), call_message.remove_reaction("❎", bot.user))
-        em = str(reaction.emoji)
+        em = str(reaction.emoji) if reaction else "❎"
         if em == "✅": # accept call
             await bot.database.execute("INSERT INTO calls VALUES (?, ?, ?)", (originating_address, address, util.timestamp()))
             await bot.database.commit()
