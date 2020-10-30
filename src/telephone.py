@@ -70,7 +70,7 @@ def setup(bot):
             if other_webhook:
                 await discord.Webhook.from_url(other_webhook, adapter=discord.AsyncWebhookAdapter(bot.http._HTTPClient__session)).send(
                     content=message.content, username=message.author.name, avatar_url=message.author.avatar_url,
-                    allowed_mentions=discord.AllowedMentions(everyone=False))
+                    allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False))
             else:
                 m = f"**{message.author.name}**: "
                 m += message.content[:2000 - len(m)]
@@ -80,7 +80,6 @@ def setup(bot):
     @telephone.command()
     @commands.check(server_mod_check)
     async def setup(ctx):
-        await ctx.send("Configuring...")
         num = generate_address(ctx)
         await ctx.send(f"Your address is {num}.")
         info = await get_addr_config(num)

@@ -22,8 +22,8 @@ def setup(bot):
             "original_time_spec": time
         }
         try:
-            time = util.parse_time(time)
             now = datetime.now(tz=timezone.utc)
+            time = util.parse_time(time)
         except:
             await ctx.send(embed=util.error_embed("Invalid time (wrong format/too large/non-integer months or years)"))
             return
