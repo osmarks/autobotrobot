@@ -23,16 +23,40 @@ prefixes = {
 }
 number = "(-?[0-9]+(?:\.[0-9]+)?)(" + "|".join(prefixes.keys()) + ")?"
 
-# from here: https://github.com/Rapptz/RoboDanny/blob/18b92ae2f53927aedebc25fb5eca02c8f6d7a874/cogs/utils/time.py
-short_timedelta_regex = re.compile(f"""
-(?:(?P<years>{number})(?:years?|y))?                # e.g. 2y
-(?:(?P<months>{number})(?:months?|mo))?             # e.g. 2months
-(?:(?P<fortnights>{number})(?:fortnights?|fn|f))?   # e.g. 10fn
-(?:(?P<weeks>{number})(?:weeks?|w))?                # e.g. 10w
-(?:(?P<days>{number})(?:days?|d))?                  # e.g. 14d
-(?:(?P<hours>{number})(?:hours?|h))?                # e.g. 12h
-(?:(?P<minutes>{number})(?:minutes?|m))?            # e.g. 10m
-(?:(?P<seconds>{number})(?:seconds?|s))?            # e.g. 15s """, re.VERBOSE)
+time_units = (
+    ("galacticyears", "cosmicyears", "gy", "[Cc]y"),
+    ("years", "y"),
+    ("beelifespans", "🐝", "bees?"),
+    ("months", "mo"),
+    ("semesters",),
+    ("fortnights", "ft?n?"),
+    ("weeks", "w"),
+    ("days", "d"),
+    ("hours", "h"),
+    # Wikipedia tells me this is a traditional Chinese timekeeping unit
+    ("ke",),
+    ("minutes", "m"),
+    ("seconds", "s")
+)
+
+tu_mappings = {
+    # dateutil dislikes fractional years, but this is 250My
+    "galacticyears": (7.8892315e15, "seconds"),
+    # apparently the average lifespan of a Western honey bee - I'm not very sure whether this is workers/drones/queens or what so TODO
+    "beelifespans": lambda: (random.randint(122, 152), "days"),
+    "semesters": (18, "weeks"),
+    "fortnights": (2, "weeks"),
+    "ke": (864, "seconds")
+}
+
+def rpartfor(u):
+    if u[0][-1] == "s": 
+        l = [u[0] + "?"]
+        l.extend(u[1:])
+    else: l = u
+    return f"(?:(?P<{u[0]}>{number})(?:{'|'.join(l)}))?"
+
+short_timedelta_regex = re.compile("\n".join(map(rpartfor, time_units)), re.VERBOSE)
 
 def parse_prefixed(s):
     match = re.match(number, s)
@@ -46,18 +70,21 @@ def parse_short_timedelta(text):
     match = short_timedelta_regex.fullmatch(text)
     if match is None or not match.group(0): raise ValueError("parse failed")
     data = { k: parse_prefixed(v) if v else 0 for k, v in match.groupdict().items() }
-    data["weeks"] += data["fortnights"] * 2
-    del data["fortnights"]
+    for tu, mapping in tu_mappings.items():
+        if callable(mapping): mapping = mapping()
+        qty, resunit = mapping
+        data[resunit] += qty * data[tu]
+        del data[tu]
     return datetime.datetime.now(tz=datetime.timezone.utc) + relativedelta(**data)
 
 cal = parsedatetime.Calendar()
 def parse_humantime(text):
     dt_tuple = cal.nlp(text)
-    if dt_tuple: return dt_tuple[0][0]
+    if dt_tuple: return dt_tuple[0][0].replace(tzinfo=datetime.timezone.utc)
     else: raise ValueError("parse failed")
 
 def parse_time(text):
-    try: return datetime.datetime.strptime(text, "%d/%m/%Y")
+    try: return datetime.datetime.strptime(text, "%d/%m/%Y").replace(tzinfo=datetime.timezone.utc)
     except: pass
     try: return parse_short_timedelta(text)
     except: pass
