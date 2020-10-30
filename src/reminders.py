@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 import discord.ext.tasks as tasks
 
 import util
@@ -23,13 +23,14 @@ def setup(bot):
         }
         try:
             time = util.parse_time(time)
+            now = datetime.now(tz=timezone.utc)
         except:
             await ctx.send(embed=util.error_embed("Invalid time (wrong format/too large/non-integer months or years)"))
             return
         await bot.database.execute("INSERT INTO reminders (remind_timestamp, created_timestamp, reminder, expired, extra) VALUES (?, ?, ?, ?, ?)", 
-            (time.timestamp(), util.timestamp(), reminder, 0, util.json_encode(extra_data)))
+            (time.timestamp(), now.timestamp(), reminder, 0, util.json_encode(extra_data)))
         await bot.database.commit()
-        await ctx.send(f"Reminder scheduled for {util.format_time(time)}.")
+        await ctx.send(f"Reminder scheduled for {util.format_time(time)} ({util.format_timedelta(now, time)}).")
 
     async def send_to_channel(info, text):
         channel = bot.get_channel(info["channel_id"])
