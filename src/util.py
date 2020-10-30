@@ -72,17 +72,18 @@ timeparts = (
     ("y", "years"),
     ("mo", "months"),
     ("d", "days"),
+    ("h", "hours"),
     ("m", "minutes"),
     ("s", "seconds")
 )
 
 def format_timedelta(from_, to):
     d = relativedelta(to, from_)
-    out = "0s" if d.seconds == 0 else ""
+    out = ""
     for short, attr in timeparts:
         x = getattr(d, attr)
         if x != 0: out += str(x) + short
-    return out
+    return "0s" if out == "" else out
 
 CODEBLOCK_REGEX = "^[^`]*```[a-zA-Z0-9_\-+]*\n(.+)```$"
 CODELINE_REGEX = "^[^`]*`(.*)`$"
