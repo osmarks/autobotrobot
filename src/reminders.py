@@ -24,7 +24,7 @@ def setup(bot):
         try:
             time = util.parse_time(time)
         except:
-            await ctx.send(embed=util.error_embed("Invalid time"))
+            await ctx.send(embed=util.error_embed("Invalid time (wrong format/too large/non-integer months or years)"))
             return
         await bot.database.execute("INSERT INTO reminders (remind_timestamp, created_timestamp, reminder, expired, extra) VALUES (?, ?, ?, ?, ?)", 
             (time.timestamp(), util.timestamp(), reminder, 0, util.json_encode(extra_data)))
@@ -92,6 +92,12 @@ def setup(bot):
             logging.info("Expiring reminder %d", expiry_id)
             await bot.database.execute("UPDATE reminders SET expired = 1 WHERE id = ?", (expiry_id,))
         await bot.database.commit()
+
+    @remind_worker.before_loop
+    async def before_remind_worker():
+        logging.info("Waiting for bot readiness...")
+        await bot.wait_until_ready()
+        logging.info("Remind worker starting")
 
     remind_worker.start()
     bot.remind_worker = remind_worker
