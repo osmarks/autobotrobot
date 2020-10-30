@@ -8,7 +8,9 @@ import util
 def setup(bot):
     @bot.command(brief="Set a reminder to be reminded about later.", rest_is_raw=True, help="""Sets a reminder which you will (probably) be reminded about at/after the specified time.
     All times are UTC.
-    Reminders are checked every minute, so while precise times are not guaranteed, reminders should under normal conditions be received within 2 minutes of what you specify.""")
+    Reminders are checked every minute, so while precise times are not guaranteed, reminders should under normal conditions be received within 2 minutes of what you specify.
+    Note that due to technical limitations reminders beyond the year 10000 CE or in the past cannot currently be handled.
+    Note that reminder delivery is not guaranteed, due to possible issues including but not limited to: data loss, me eventually not caring, the failure of Discord (in this case message delivery will still be attempted manually on a case-by-case basis), the collapse of human civilization, or other existential risks.""")
     async def remind(ctx, time, *, reminder):
         reminder = reminder.strip()
         if len(reminder) > 512:
