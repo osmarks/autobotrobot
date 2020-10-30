@@ -13,26 +13,44 @@ config = toml.load(open("config.toml", "r"))
 
 def timestamp(): return int(datetime.datetime.now(tz=datetime.timezone.utc).timestamp())
 
+prefixes = {
+    # big SI prefixes
+    "Y": 24, "Z": 21, "E": 18, "P": 15, "T": 12, "G": 9, "M": 6, "k": 3, "h": 2, "da": 1,
+    # small SI prefixes
+    "d": -1, "c": -2, "m": -3, "µ": -6, "μ": -6, "u": -6, "n": -9, "p": -12, "f": -15, "a": -18, "z": -21, "y": -24,
+    # highly dubiously useful unofficial prefixes
+    "R": 27, "r": -27, "Q": 30, "q": -30, "X": 27, "x": -27, "W": 30, "w": -30
+}
+number = "(-?[0-9]+(?:\.[0-9]+)?)(" + "|".join(prefixes.keys()) + ")?"
+
 # from here: https://github.com/Rapptz/RoboDanny/blob/18b92ae2f53927aedebc25fb5eca02c8f6d7a874/cogs/utils/time.py
-short_timedelta_regex = re.compile("""
-(?:(?P<years>[0-9]{1,12})(?:years?|y))?        # e.g. 2y
-(?:(?P<months>[0-9]{1,12})(?:months?|mo))?     # e.g. 2months
-(?:(?P<weeks>[0-9]{1,12})(?:weeks?|w))?        # e.g. 10w
-(?:(?P<days>[0-9]{1,12})(?:days?|d))?          # e.g. 14d
-(?:(?P<hours>[0-9]{1,12})(?:hours?|h))?        # e.g. 12h
-(?:(?P<minutes>[0-9]{1,12})(?:minutes?|m))?    # e.g. 10m
-(?:(?P<seconds>[0-9]{1,12})(?:seconds?|s))?    # e.g. 15s """, re.VERBOSE)
+short_timedelta_regex = re.compile(f"""
+(?:(?P<years>{number})(?:years?|y))?        # e.g. 2y
+(?:(?P<months>{number})(?:months?|mo))?     # e.g. 2months
+(?:(?P<weeks>{number})(?:weeks?|w))?        # e.g. 10w
+(?:(?P<days>{number})(?:days?|d))?          # e.g. 14d
+(?:(?P<hours>{number})(?:hours?|h))?        # e.g. 12h
+(?:(?P<minutes>{number})(?:minutes?|m))?    # e.g. 10m
+(?:(?P<seconds>{number})(?:seconds?|s))?    # e.g. 15s """, re.VERBOSE)
+
+def parse_prefixed(s):
+    match = re.match(number, s)
+    if not match: raise ValueError("does not match metric-prefixed integer format - ensure prefix is valid")
+    num = float(match.group(1))
+    prefix = match.group(2)
+    if prefix: num *= (10 ** prefixes[prefix])
+    return num
 
 def parse_short_timedelta(text):
     match = short_timedelta_regex.fullmatch(text)
     if match is None or not match.group(0): raise ValueError("parse failed")
-    data = { k: int(v) for k, v in match.groupdict(default=0).items() }
+    data = { k: parse_prefixed(v) if v else 0 for k, v in match.groupdict().items() }
     return datetime.datetime.now(tz=datetime.timezone.utc) + relativedelta(**data)
 
 cal = parsedatetime.Calendar()
 def parse_humantime(text):
-    time_struct, parse_status = cal.nlp(text)
-    if parse_status == 1: return datetime.datetime(*time_struct[:6])
+    dt_tuple = cal.nlp(text)
+    if dt_tuple: return dt_tuple[0][0]
     else: raise ValueError("parse failed")
 
 def parse_time(text):
@@ -42,7 +60,7 @@ def parse_time(text):
     except: pass
     try: return parse_humantime(text)
     except: pass
-    raise ValueError("could not parse time")
+    raise ValueError("time matches no available format")
 
 def format_time(dt):
     return dt.strftime("%H:%M:%S %d/%m/%Y")
