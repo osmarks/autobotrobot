@@ -35,7 +35,7 @@ async def achieve(bot: commands.Bot, message: discord.Message, achievement):
     if await bot.database.execute_fetchone("SELECT 1 FROM achievements WHERE user_id = ? AND achievement = ?", (uid, achievement)):
         return
     achievement_info = achievements[achievement]
-    description = f"Congratulations! You achieved the achievement __{achievement_info.name}__.\n\n{achievement_info.description}\n*{achievement_info.condition}*"
+    description = f"Congratulations, {message.author.name}#{message.author.discriminator}! You achieved the achievement __{achievement_info.name}__.\n\n{achievement_info.description}\n*{achievement_info.condition}*"
     e = util.make_embed(description=description, title="Achievement achieved!", color=util.hashbow(achievement))
     e.set_thumbnail(url=await util.get_asset(bot, f"achievements/{achievement}.png"))
     await message.channel.send(embed=e)
