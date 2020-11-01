@@ -17,8 +17,6 @@ def generate_address(ctx):
         out += words[int.from_bytes(h[i * 2:i * 2 + 3], "little") % 8192].strip().title()
     return out
 
-channel_calls_cache = {}
-
 def setup(bot):
     @bot.group(name="apiotelephone", aliases=["tel", "tele", "telephone", "apiotel"], brief="ApioTelephone lets you 'call' other servers.", help=f"""
     Call other (participating) servers with ApioTelephone! To configure a channel for telephony, do `{bot.command_prefix}tel setup` (requires Manage Channels).
@@ -34,44 +32,37 @@ def setup(bot):
     async def get_addr_config(addr):
         return await bot.database.execute_fetchone("SELECT * FROM telephone_config WHERE id = ?", (addr,))
 
-    def cache_call(chan, other, other_wh):
-        x = channel_calls_cache.get(chan)
-        if not x: 
-            x = []
-            channel_calls_cache[chan] = x
-        # append other end and associated webhook
-        x.append((other, other_wh))
-
-    def uncache_call(chan, other):
-        # remove other end
-        l = channel_calls_cache[chan]
-        for i, (c, _) in enumerate(l):
-            if c == other: l.pop(i)
-
-    async def populate_cache(db):
-        for row in await db.execute_fetchall("""SELECT tcf.channel_id AS from_channel, tct.channel_id AS to_channel, tcf.webhook AS from_webhook, tct.webhook AS to_webhook FROM calls
-            JOIN telephone_config AS tcf ON tcf.id = calls.from_id JOIN telephone_config AS tct ON tct.id = calls.to_id"""):
-            cache_call(row["from_channel"], row["to_channel"], row["to_webhook"])
-            cache_call(row["to_channel"], row["from_channel"], row["from_webhook"])
-
-    bot.loop.create_task(populate_cache(bot.database))
-
     @bot.listen("on_message")
     async def forward_call_messages(message):
-        calls = channel_calls_cache.get(message.channel.id, None)
-        if not calls: return
+        channel = message.channel.id
         if (message.author.discriminator == "0000" and message.author.bot) or message.author == bot.user or message.content == "": # check if webhook, from itself, or only has embeds
             return
+        calls = await bot.database.execute_fetchall("""SELECT tcf.channel_id AS from_channel, tct.channel_id AS to_channel, 
+            tcf.webhook AS from_webhook, tct.webhook AS to_webhook FROM calls
+            JOIN telephone_config AS tcf ON tcf.id = calls.from_id JOIN telephone_config AS tct ON tct.id = calls.to_id
+            WHERE from_channel = ? OR to_channel = ?""", (channel, channel))
+        if calls == []: return
         async def send_to(call):
-            other_channel, other_webhook = call
-            if other_webhook:
-                await discord.Webhook.from_url(other_webhook, adapter=discord.AsyncWebhookAdapter(bot.http._HTTPClient__session)).send(
-                    content=message.content, username=message.author.name, avatar_url=message.author.avatar_url,
-                    allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False))
+            if call["from_channel"] == channel:
+                other_channel, other_webhook = call["to_channel"], call["to_webhook"]
             else:
+                other_channel, other_webhook = call["from_channel"], call["from_webhook"]
+
+            async def send_normal_message():
                 m = f"**{message.author.name}**: "
                 m += message.content[:2000 - len(m)]
                 await bot.get_channel(other_channel).send(m)
+
+            if other_webhook:
+                try:
+                    await discord.Webhook.from_url(other_webhook, adapter=discord.AsyncWebhookAdapter(bot.http._HTTPClient__session)).send(
+                        content=message.content, username=message.author.name, avatar_url=message.author.avatar_url,
+                        allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False))
+                except discord.errors.NotFound:
+                    logging.warn("channel %d webhook missing", other_channel)
+                    await send_normal_message()
+            else: await send_normal_message()
+                
         await asyncio.gather(*map(send_to, calls))
 
     @telephone.command()
@@ -140,8 +131,6 @@ def setup(bot):
                 ctx.send(embed=util.info_embed("Outgoing call", "Call accepted and connected.")),
                 recv_channel.send(embed=util.info_embed("Incoming call", "Call accepted and connected."))
             )
-            cache_call(ctx.channel.id, recv_channel.id, recv_info["webhook"])
-            cache_call(recv_channel.id, ctx.channel.id, channel_info["webhook"])
         elif em == "❎": # drop call
             await ctx.send(embed=util.error_embed("Your call was declined.", "Call declined"))
 
@@ -166,9 +155,6 @@ def setup(bot):
             await bot.database.execute("DELETE FROM calls WHERE to_id = ? AND from_id = ?", (addr, other))
         await bot.database.commit()
         other_channel = (await get_addr_config(other))["channel_id"]
-
-        uncache_call(ctx.channel.id, other_channel)
-        uncache_call(other_channel, ctx.channel.id)
 
         await asyncio.gather(
             ctx.send(embed=util.info_embed("Hung up", f"Call to {other} disconnected.")),
