@@ -26,7 +26,7 @@ async def achieve(bot: commands.Bot, message: discord.Message, achievement):
 
     uid = message.author.id
     # ensure the user doesn't have achievements off
-    conf = await bot.database.execute_fetchone("SELECT * FROM user_config")
+    conf = await bot.database.execute_fetchone("SELECT * FROM user_config WHERE id = ?", (uid,))
     if conf and conf["achievement_tracking_enabled"] == 0: return
     if not conf:
         await bot.database.execute("INSERT INTO user_config VALUES (?, NULL)", (uid,))
