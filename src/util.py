@@ -225,3 +225,8 @@ def gen_codeblock(content):
     return "```\n" + content.replace("```", "\\`\\`\\`")[:1900] + "\n```"
 
 def json_encode(x): return json.dumps(x, separators=(',', ':'))
+
+def server_mod_check(bot):
+    async def check(ctx):
+        return ctx.author.permissions_in(ctx.channel).manage_channels or (await bot.is_owner(ctx.author))
+    return check
