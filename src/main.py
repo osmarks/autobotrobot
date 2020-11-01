@@ -11,6 +11,7 @@ import argparse
 import traceback
 import random
 import rolldice
+#import aiopubsub
 
 import tio
 import db
@@ -204,14 +205,16 @@ async def andrew_bad(ctx):
 @bot.event
 async def on_ready():
     logging.info("Connected as " + bot.user.name)
-    await bot.change_presence(status=discord.Status.online, activity=discord.Activity(type=discord.ActivityType.listening, name=f"commands beginning with {bot.command_prefix}"))
+    await bot.change_presence(status=discord.Status.online, 
+        activity=discord.CustomActivity(name=f"{bot.command_prefix}help"))
 
 async def run_bot():
     bot.database = await db.init(config["database"])
     for ext in (
         "reminders",
         "debug",
-        "telephone"
+        "telephone",
+        "achievement"
     ):
         bot.load_extension(ext)
     await bot.start(config["token"])

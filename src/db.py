@@ -36,6 +36,37 @@ CREATE TABLE calls (
     to_id TEXT NOT NULL REFERENCES telephone_config(id),
     start_time INTEGER NOT NULL
 );
+""",
+"""
+CREATE TABLE guild_config (
+    id INTEGER PRIMARY KEY,
+    achievement_messages INTEGER
+);
+
+CREATE TABLE user_config (
+    id INTEGER PRIMARY KEY,
+    achievement_tracking_enabled INTEGER
+);
+
+CREATE TABLE stats (
+    user_id INTEGER NOT NULL REFERENCES user_config (id),
+    stat TEXT NOT NULL COLLATE NOCASE,
+    value BLOB NOT NULL,
+    UNIQUE (user_id, stat)
+);
+
+CREATE TABLE achievements (
+    user_id INTEGER NOT NULL REFERENCES user_config (id),
+    achievement TEXT NOT NULL,
+    achieved_time INTEGER NOT NULL,
+    UNIQUE (user_id, achievement)
+);
+""",
+"""
+CREATE TABLE assets (
+    identifier TEXT PRIMARY KEY,
+    url TEXT NOT NULL
+);
 """
 ]
 
