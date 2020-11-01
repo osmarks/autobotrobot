@@ -15,7 +15,9 @@ achievements = {
     "spectre_of_communism": Achievement("Containment Efforts Ongoing", "Refer to the 'spectre of communism' in a message.", "A spectre is haunting Europe. The spectre of communism. Containment efforts are ongoing and full containment is projected by 2036."),
     "test": Achievement("Test", "Test achievement. Obtained for testing.", "Congratulations, you ran the test command!"),
     "spam": Achievement("beesbeesbeesbeesbeesbeesbeesbeesbees", "Send a long message containing the same thing repeatedly.", "You should probably not do this, nobody* likes spam!"),
-    "unicode_abuse": Achievement("Anomalous Unicode", "Send a high proportion of weird Unicode characters in a message.", "h̵͖̻̮̗̹̆͛͆̎ͮͤͫ͛ͦ̓̅ͤ́͢é͒ͧ̌̀ͪ̈͂̈́̉ͣ̅̿̄̌̋̿̽̚͏̛͏͚̯͉̟͇̼̹͎ͅa̠̹̘͎̫̜̞̩͖̟̟͍͇͈͍̝͕͛ͥ͊̾̈́ͩͯͩͭ̆̋͐͗̉͋̓̀͝v͎͖̜͎͔̞͚͉̺̞̘̥͖̝͚̺̍ͤ̌͂ͨ̃̅ͫ̿͛ͯ̓̉̆̎͊̀̚̕͟s̪̠̟̣̝̹̭̻̈́ͤ͗̏ͮ̂ͯ̈́̊ͩ̓̆̌̆͌̽̓̈́̚͢͞e̛̞̙̜̗̰͕͕͎̺͍̭̲̟̭̲̫̬͓ͯ̅̓̆̂̔̃͟r̷̛̮̮͇̳̳̾ͯͮͩ̏͂ͤ̿̽ͧ͒͋́̕ͅͅv̴̠͉̼̮̭̘ͪͯͦ͌́ͯ̒̃̀́̃͜͝ͅe̵̷̢͕̣̻̥̲͓̼͍̱͕̮̯̱̤̹̱̝̎̓̈́̿ͤ̔̍ͭͭ͐ͅŗ̔ͮͯ͂́͏̻͈̱ͅ ̣͇̼͊̄ͫ̆̍̄̀̀̓͊͐͋̌͘͠į̱͔̰̭̫̱̫̊ͪ̅ͥ̈́ͥ̐͌̅ͪ̅ͨ̎̀͘͝s̍͑̌̋̅͌͂ͨͬͯ̇͊҉̛̱̺͕̰͓̗̖̬͡͡ ̥̤̺̖̪̪́ͯͣ̏̅̈ͣ̿̀͠͠͞i̢̛̭̰̻͈̦̣̮̞̤̩̊̌̾͛ͭͦ̆ͮ̃̎ͪ̔ͬ͊̆͂ͫͅn̸̖͚̣̪̩̏ͥ̈́̅ͯ̔͆́ͦ͗͛͒̃̃ͫ͟͜͝͠ȩ̸͎̟̣̞͉̫̗̙̻̯͍̰̣̌ͪͨ͛̆̕͡v̙͙̲͕͔̦̣̺͔̖͉̜̲̩̈̿ͥ̎͊̈́̊ͯͯ͒ͭ̊̀͢i̪͈̣̱̞̥̰̟̣̩̼̻̪̳̤͇̻̹͉͗ͭ͆̆̎̀͑͑̆͋̏̏͊ͣͦ͆ͣ̈́̓͟͢ţ̵̘̫̯͓̻̗͕̘͙̯̞̪̪̲̤̬̜͕ͫ̄̌̓̎͌ͧ̔͟͢ͅa̸̧̭̲̯̳̔́͋̐͂̇ͪ̔̐́̚͢b͐̅̔ͭ͗̊̂̾̀̓ͭͭ͑ͤ̏̐̃ͩͬ҉̞̼̮̤̝̲̳͓̗̤̫̭̝̹̙͘͟͝ļ̷͈̭̖͓̜̬͔̻͔̀̎ͯ͗̐̽̏ͦ̊͗ͧ́͘ͅe̢͍̦̗̬̝̠͔̳̣̯̮̣̹͍͙̞̜ͣ̉͆̊̀̎ͦ͌̂̋̊ͨ͛́")
+    "unicode_abuse": Achievement("Anomalous Unicode", "Send a high proportion of weird Unicode characters in a message.", "h̵͖̻̮̗̹̆͛͆̎ͮͤͫ͛ͦ̓̅ͤ́͢é͒ͧ̌̀ͪ̈͂̈́̉ͣ̅̿̄̌̋̿̽̚͏̛͏͚̯͉̟͇̼̹͎ͅa̠̹̘͎̫̜̞̩͖̟̟͍͇͈͍̝͕͛ͥ͊̾̈́ͩͯͩͭ̆̋͐͗̉͋̓̀͝v͎͖̜͎͔̞͚͉̺̞̘̥͖̝͚̺̍ͤ̌͂ͨ̃̅ͫ̿͛ͯ̓̉̆̎͊̀̚̕͟s̪̠̟̣̝̹̭̻̈́ͤ͗̏ͮ̂ͯ̈́̊ͩ̓̆̌̆͌̽̓̈́̚͢͞e̛̞̙̜̗̰͕͕͎̺͍̭̲̟̭̲̫̬͓ͯ̅̓̆̂̔̃͟r̷̛̮̮͇̳̳̾ͯͮͩ̏͂ͤ̿̽ͧ͒͋́̕ͅͅv̴̠͉̼̮̭̘ͪͯͦ͌́ͯ̒̃̀́̃͜͝ͅe̵̷̢͕̣̻̥̲͓̼͍̱͕̮̯̱̤̹̱̝̎̓̈́̿ͤ̔̍ͭͭ͐ͅŗ̔ͮͯ͂́͏̻͈̱ͅ ̣͇̼͊̄ͫ̆̍̄̀̀̓͊͐͋̌͘͠į̱͔̰̭̫̱̫̊ͪ̅ͥ̈́ͥ̐͌̅ͪ̅ͨ̎̀͘͝s̍͑̌̋̅͌͂ͨͬͯ̇͊҉̛̱̺͕̰͓̗̖̬͡͡ ̥̤̺̖̪̪́ͯͣ̏̅̈ͣ̿̀͠͠͞i̢̛̭̰̻͈̦̣̮̞̤̩̊̌̾͛ͭͦ̆ͮ̃̎ͪ̔ͬ͊̆͂ͫͅn̸̖͚̣̪̩̏ͥ̈́̅ͯ̔͆́ͦ͗͛͒̃̃ͫ͟͜͝͠ȩ̸͎̟̣̞͉̫̗̙̻̯͍̰̣̌ͪͨ͛̆̕͡v̙͙̲͕͔̦̣̺͔̖͉̜̲̩̈̿ͥ̎͊̈́̊ͯͯ͒ͭ̊̀͢i̪͈̣̱̞̥̰̟̣̩̼̻̪̳̤͇̻̹͉͗ͭ͆̆̎̀͑͑̆͋̏̏͊ͣͦ͆ͣ̈́̓͟͢ţ̵̘̫̯͓̻̗͕̘͙̯̞̪̪̲̤̬̜͕ͫ̄̌̓̎͌ͧ̔͟͢ͅa̸̧̭̲̯̳̔́͋̐͂̇ͪ̔̐́̚͢b͐̅̔ͭ͗̊̂̾̀̓ͭͭ͑ͤ̏̐̃ͩͬ҉̞̼̮̤̝̲̳͓̗̤̫̭̝̹̙͘͟͝ļ̷͈̭̖͓̜̬͔̻͔̀̎ͯ͗̐̽̏ͦ̊͗ͧ́͘ͅe̢͍̦̗̬̝̠͔̳̣̯̮̣̹͍͙̞̜ͣ̉͆̊̀̎ͦ͌̂̋̊ͨ͛́"),
+    "rtfm": Achievement("RTFM", "Tell someone to read the documentation.", "Apparently, people won't do this without prompting half the time."),
+    "error": Achievement("You broke it", "Cause an internal error in the bot", "I should probably fix this.")
 }
 
 async def achieve(bot: commands.Bot, message: discord.Message, achievement):
@@ -63,6 +65,7 @@ def setup(bot):
     async def message_listener(msg: discord.Message):
         content = msg.content
         content_len = len(msg.content)
-        if re.match("spect(re|er).{,20}(communism|☭)", content): await achieve(bot, msg, "spectre_of_communism")
+        if re.match("spect(re|er).{,20}(communism|☭)", content, re.IGNORECASE): await achieve(bot, msg, "spectre_of_communism")
         if re.match(r"^(.+)\1+$", content) and len(content) >= 1950: await achieve(bot, msg, "spam")
         if content_len > 30 and (len(re.findall("[\u0300-\u036f\U00040000-\U0010FFFF]", content)) / content_len) > 0.35: await achieve(bot, msg, "unicode_abuse")
+        if re.match("(RTFM|(read|look|view|use).{,20}(doc|man|instruction))", content, re.IGNORECASE): await achieve(bot, msg, "rtfm")

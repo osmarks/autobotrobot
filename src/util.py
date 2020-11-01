@@ -10,6 +10,7 @@ import discord
 import toml
 import os.path
 from discord.ext import commands
+import hashlib
 
 config = toml.load(open("config.toml", "r"))
 
@@ -245,4 +246,4 @@ async def get_asset(bot: commands.Bot, identifier):
     return url
 
 def hashbow(thing):
-    return hash(thing) % 0x1000000
+    return int.from_bytes(hashlib.blake2b(thing.encode("utf-8")).digest()[:3], "little")
