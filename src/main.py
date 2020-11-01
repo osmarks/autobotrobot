@@ -206,7 +206,7 @@ async def andrew_bad(ctx):
 async def on_ready():
     logging.info("Connected as " + bot.user.name)
     await bot.change_presence(status=discord.Status.online, 
-        activity=discord.CustomActivity(name=f"{bot.command_prefix}help"))
+        activity=discord.Activity(name=f"to {bot.command_prefix}help", type=discord.ActivityType.listening))
 
 async def run_bot():
     bot.database = await db.init(config["database"])
