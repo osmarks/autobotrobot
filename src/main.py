@@ -22,7 +22,8 @@ config = util.config
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(asctime)s %(message)s", datefmt="%H:%M:%S %d/%m/%Y")
 
-bot = commands.Bot(command_prefix=config["prefix"], description="AutoBotRobot, the most useless bot in the known universe.", case_insensitive=True)
+bot = commands.Bot(command_prefix=config["prefix"], description="AutoBotRobot, the most useless bot in the known universe.", 
+    case_insensitive=True, allowed_mentions=discord.AllowedMentions(everyone=False, users=True, roles=True))
 bot._skip_check = lambda x, y: False
 
 
@@ -162,9 +163,9 @@ You can also invite it to your server: <https://discordapp.com/oauth2/authorize?
 async def random_int(ctx, *, dice):
     await ctx.send(rolldice.roll_dice(dice)[0])
 
-bad_things = ["lyric", "endos", "solarflame", "lyric", "319753218592866315", "andrew", "6", "c++"]
-good_things = ["potato", "heav", "gollark", "helloboi", "bees", "hellboy", "rust", "ferris", "crab", "transistor"]
-negations = ["not", "bad", "un", "kill", "n't"]
+bad_things = ["lyric", "solarflame", "lyric", "319753218592866315", "andrew", "6", "c++", "☭", "communism"]
+good_things = ["potato", "heav", "gollark", "helloboi", "bees", "hellboy", "rust", "ferris", "crab", "transistor", "endos", "make esolang"]
+negations = ["not", "bad", "un", "kill", "n't", "¬"]
 def weight(thing):
     lthing = thing.lower()
     weight = 1.0

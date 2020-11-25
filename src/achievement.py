@@ -23,6 +23,7 @@ achievements = {
 async def achieve(bot: commands.Bot, message: discord.Message, achievement):
     guild_conf = await bot.database.execute_fetchone("SELECT achievement_messages FROM guild_config WHERE id = ?", (message.guild.id,))
     if guild_conf and guild_conf["achievement_messages"] == 0: return
+    channel = message.channel
 
     uid = message.author.id
     # ensure the user doesn't have achievements off
@@ -38,7 +39,7 @@ async def achieve(bot: commands.Bot, message: discord.Message, achievement):
     description = f"Congratulations, {message.author.name}#{message.author.discriminator}! You achieved the achievement __{achievement_info.name}__.\n\n{achievement_info.description}\n*{achievement_info.condition}*"
     e = util.make_embed(description=description, title="Achievement achieved!", color=util.hashbow(achievement))
     e.set_thumbnail(url=await util.get_asset(bot, f"achievements/{achievement}.png"))
-    await message.channel.send(embed=e)
+    await channel.send(embed=e)
     await bot.database.execute("INSERT INTO achievements VALUES (?, ?, ?)", (uid, achievement, util.timestamp()))
     await bot.database.commit()
     logging.info("awarded achievement %s to %s", message.author.name, achievement)
