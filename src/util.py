@@ -12,7 +12,13 @@ import os.path
 from discord.ext import commands
 import hashlib
 
-config = toml.load(open("config.toml", "r"))
+config = {}
+
+# update in place for runtime config reload
+def load_config():
+    for k, v in toml.load(open("config.toml", "r")).items(): config[k] = v
+
+load_config()
 
 def timestamp(): return int(datetime.datetime.now(tz=datetime.timezone.utc).timestamp())
 

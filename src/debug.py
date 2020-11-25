@@ -47,3 +47,8 @@ def setup(bot):
             await bot.database.commit()
         except Exception as e:
             await ctx.send(embed=util.error_embed(util.gen_codeblock(traceback.format_exc())))
+
+    @magic.command()
+    async def reload_config(ctx):
+        util.load_config()
+        ctx.send("Done!")
