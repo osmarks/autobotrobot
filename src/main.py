@@ -22,10 +22,12 @@ config = util.config
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(asctime)s %(message)s", datefmt="%H:%M:%S %d/%m/%Y")
 
+#intents = discord.Intents.default()
+#intents.members = True
+
 bot = commands.Bot(command_prefix=config["prefix"], description="AutoBotRobot, the most useless bot in the known universe.", 
     case_insensitive=True, allowed_mentions=discord.AllowedMentions(everyone=False, users=True, roles=True))
 bot._skip_check = lambda x, y: False
-
 
 cleaner = discord.ext.commands.clean_content()
 def clean(ctx, text):
@@ -216,7 +218,8 @@ async def run_bot():
         "reminders",
         "debug",
         "telephone",
-        "achievement"
+        "achievement",
+        "heavserver"
     ):
         bot.load_extension(ext)
     await bot.start(config["token"])
