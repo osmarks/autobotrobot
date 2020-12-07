@@ -11,7 +11,9 @@ import argparse
 import traceback
 import random
 import rolldice
-#import aiopubsub
+import collections
+import typing
+from numpy.random import default_rng
 
 import tio
 import db
@@ -163,11 +165,12 @@ You can also invite it to your server: <https://discordapp.com/oauth2/authorize?
 
 @bot.command(help="Randomly generate an integer using dice syntax.", name="random", rest_is_raw=True)
 async def random_int(ctx, *, dice):
-    await ctx.send(rolldice.roll_dice(dice)[0])
+    await ctx.send("Disabled until CPU use restrictions can be done.")
+    #await ctx.send(rolldice.roll_dice(dice)[0])
 
 bad_things = ["lyric", "solarflame", "lyric", "319753218592866315", "andrew", "6", "c++", "☭", "communism"]
-good_things = ["potato", "heav", "gollark", "helloboi", "bees", "hellboy", "rust", "ferris", "crab", "transistor", "endos", "make esolang"]
-negations = ["not", "bad", "un", "kill", "n't", "¬"]
+good_things = ["potato", "heav", "gollark", "helloboi", "bee", "hellboy", "rust", "ferris", "crab", "transistor", "endos", "make esolang"]
+negations = ["not", "bad", "un", "kill", "n't", "¬", "counter"]
 def weight(thing):
     lthing = thing.lower()
     weight = 1.0
@@ -180,28 +183,33 @@ def weight(thing):
         for _ in range(lthing.count(negation)): weight = 1 / weight
     return weight
 
+rng = default_rng()
+
 @bot.command(help="'Randomly' choose between the specified options.", name="choice", aliases=["choose"])
 async def random_choice(ctx, *choices):
-    choicelist = list(choices)
+    choices = list(choices)
     samples = 1
+    # apparently doing typing.Optional[int] doesn't work properly with this, so just bodge around it
     try:
         samples = int(choices[0])
-        choicelist.pop(0)
+        choices.pop(0)
     except: pass
 
-    if samples > 1e4:
+    if samples > 9223372036854775807 or samples < 1 or len(choices) < 1:
         await ctx.send("No.")
         return
 
-    choices = random.choices(choicelist, weights=map(weight, choicelist), k=samples)
+    # because of python weirdness, using sum() on the bare map iterator consumes it, which means we have to actually make a list
+    weights = list(map(weight, choices))
 
-    if len(choices) == 1:
-        await ctx.send(choices[0])
-    else:
-        counts = {}
-        for choice in choices:
-            counts[choice] = counts.get(choice, 0) + 1
-        await ctx.send("\n".join(map(lambda x: f"{x[0]} x{x[1]}", counts.items())))
+    if samples == 1: return await ctx.send(random.choices(choices, weights=weights, k=1)[0])
+
+    total = sum(weights)
+    probabilities = list(map(lambda x: x / total, weights))
+    results = map(lambda t: (choices[t[0]], t[1]), enumerate(rng.multinomial(samples, list(probabilities))))
+
+    await ctx.send("\n".join(map(lambda x: f"{x[0]} x{x[1]}", results)))
+
 @bot.check
 async def andrew_bad(ctx):
     return ctx.message.author.id != 543131534685765673
