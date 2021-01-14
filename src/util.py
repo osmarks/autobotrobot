@@ -235,10 +235,11 @@ def gen_codeblock(content):
 
 def json_encode(x): return json.dumps(x, separators=(',', ':'))
 
-def server_mod_check(bot):
-    async def check(ctx):
-        return ctx.author.permissions_in(ctx.channel).manage_channels or (await bot.is_owner(ctx.author))
-    return check
+async def server_mod_check(ctx):
+    return ctx.author.permissions_in(ctx.channel).manage_channels or (await ctx.bot.is_owner(ctx.author))
+
+async def admin_check(ctx):
+    return await ctx.bot.is_owner(ctx.author)
 
 async def get_asset(bot: commands.Bot, identifier):
     safe_ident = re.sub("[^A-Za-z0-9_.-]", "_", identifier)
@@ -253,3 +254,12 @@ async def get_asset(bot: commands.Bot, identifier):
 
 def hashbow(thing):
     return int.from_bytes(hashlib.blake2b(thing.encode("utf-8")).digest()[:3], "little")
+
+extensions = (
+    "reminders",
+    "debug",
+    "telephone",
+    "achievement",
+    "heavserver",
+    "voice"
+)

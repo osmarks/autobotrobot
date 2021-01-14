@@ -66,7 +66,7 @@ def setup(bot):
         await asyncio.gather(*map(send_to, calls))
 
     @telephone.command()
-    @commands.check(util.server_mod_check(bot))
+    @commands.check(util.server_mod_check)
     async def setup(ctx):
         num = generate_address(ctx)
         await ctx.send(f"Your address is {num}.")

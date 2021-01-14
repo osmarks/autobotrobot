@@ -27,7 +27,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(asctime)s %(mess
 #intents = discord.Intents.default()
 #intents.members = True
 
-bot = commands.Bot(command_prefix=config["prefix"], description="AutoBotRobot, the most useless bot in the known universe.", 
+bot = commands.Bot(command_prefix=config["prefix"], description="AutoBotRobot, the most useless bot in the known universe." + util.config.get("description_suffix", ""), 
     case_insensitive=True, allowed_mentions=discord.AllowedMentions(everyone=False, users=True, roles=True))
 bot._skip_check = lambda x, y: False
 
@@ -222,13 +222,8 @@ async def on_ready():
 
 async def run_bot():
     bot.database = await db.init(config["database"])
-    for ext in (
-        "reminders",
-        "debug",
-        "telephone",
-        "achievement",
-        "heavserver"
-    ):
+    for ext in util.extensions:
+        logging.info("loaded %s", ext)
         bot.load_extension(ext)
     await bot.start(config["token"])
 

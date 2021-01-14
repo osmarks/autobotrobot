@@ -52,7 +52,7 @@ def setup(bot):
     async def achievements(ctx): pass
 
     @achievements.command(help="Enable/disable achievement messages on this guild.")
-    @commands.check(util.server_mod_check(bot))
+    @commands.check(util.server_mod_check)
     async def set_enabled(ctx, on: bool):
         await bot.database.execute("INSERT OR REPLACE INTO guild_config VALUES (?, ?)", (ctx.guild.id, int(on)))
         await bot.database.commit()
@@ -69,4 +69,4 @@ def setup(bot):
         if re.match("spect(re|er).{,20}(communism|☭)", content, re.IGNORECASE): await achieve(bot, msg, "spectre_of_communism")
         if re.match(r"^(.+)\1+$", content) and len(content) >= 1950: await achieve(bot, msg, "spam")
         if content_len > 30 and (len(re.findall("[\u0300-\u036f\U00040000-\U0010FFFF]", content)) / content_len) > 0.35: await achieve(bot, msg, "unicode_abuse")
-        if re.match("(RTFM|(read|look|view|use).{,20}(doc|man|instruction))", content, re.IGNORECASE): await achieve(bot, msg, "rtfm")
+        if re.match("(RTFM|(read|look|view|use).{,8}(document|man(page|ual)s?|instruction))", content, re.IGNORECASE): await achieve(bot, msg, "rtfm")
