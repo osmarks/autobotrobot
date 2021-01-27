@@ -12,6 +12,8 @@ import traceback
 import random
 import rolldice
 import collections
+import prometheus_client
+import prometheus_async.aio
 import typing
 from numpy.random import default_rng
 
@@ -35,8 +37,11 @@ cleaner = discord.ext.commands.clean_content()
 def clean(ctx, text):
     return cleaner.convert(ctx, text)
 
+messages = prometheus_client.Counter("abr_messages", "Messages seen/handled by bot")
+command_invocations = prometheus_client.Counter("abr_command_invocations", "Total commands invoked (includes failed)")
 @bot.event
 async def on_message(message):
+    messages.inc()
     words = message.content.split(" ")
     if len(words) == 10 and message.author.id == 435756251205468160:
         await message.channel.send(util.unlyric(message.content))
@@ -44,14 +49,17 @@ async def on_message(message):
         if message.author == bot.user or message.author.discriminator == "0000": return
         ctx = await bot.get_context(message)
         if not ctx.valid: return
+        command_invocations.inc()
         await bot.invoke(ctx)
 
+command_errors = prometheus_client.Counter("abr_errors", "Count of errors encountered in executing commands.")
 @bot.event
 async def on_command_error(ctx, err):
     #print(ctx, err)
     if isinstance(err, (commands.CommandNotFound, commands.CheckFailure)): return
     if isinstance(err, commands.MissingRequiredArgument): return await ctx.send(embed=util.error_embed(str(err)))
     try:
+        command_errors.inc()
         trace = re.sub("\n\n+", "\n", "\n".join(traceback.format_exception(err, err, err.__traceback__)))
         logging.error("command error occured (in %s)", ctx.invoked_with, exc_info=err)
         await ctx.send(embed=util.error_embed(util.gen_codeblock(trace), title="Internal error"))
@@ -168,18 +176,15 @@ async def random_int(ctx, *, dice):
     await ctx.send("Disabled until CPU use restrictions can be done.")
     #await ctx.send(rolldice.roll_dice(dice)[0])
 
-bad_things = ["lyric", "solarflame", "lyric", "319753218592866315", "andrew", "6", "c++", "☭", "communism"]
-good_things = ["potato", "heav", "gollark", "helloboi", "bee", "hellboy", "rust", "ferris", "crab", "transistor", "endos", "make esolang"]
-negations = ["not", "bad", "un", "kill", "n't", "¬", "counter"]
 def weight(thing):
     lthing = thing.lower()
     weight = 1.0
     if lthing == "c": weight *= 0.3
-    for bad_thing in bad_things:
+    for bad_thing in util.config["autobias"]["bad_things"]:
         if bad_thing in lthing: weight *= 0.5
-    for good_thing in good_things:
+    for good_thing in util.config["autobias"]["good_things"]:
         if good_thing in lthing: weight *= 2.0
-    for negation in negations:
+    for negation in util.config["autobias"]["negations"]:
         for _ in range(lthing.count(negation)): weight = 1 / weight
     return weight
 
@@ -229,6 +234,7 @@ async def run_bot():
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
+    loop.create_task(prometheus_async.aio.web.start_http_server(port=config["metrics_port"]))
     try:
         loop.run_until_complete(run_bot())
     except KeyboardInterrupt:
