@@ -2,11 +2,9 @@ import json
 import logging
 from datetime import datetime, timezone
 import discord.ext.tasks as tasks
-import prometheus_client
 
 import util
-
-reminders_fired = prometheus_client.Counter("abr_reminders", "Reminders successfully delivered to users")
+import metrics
 
 def setup(bot):
     @bot.command(brief="Set a reminder to be reminded about later.", rest_is_raw=True, help="""Sets a reminder which you will (probably) be reminded about at/after the specified time.
@@ -89,7 +87,7 @@ def setup(bot):
                         print("trying", method_name, rid)
                         try:
                             await func(extra, text)
-                            reminders_fired.inc()
+                            metrics.reminders_fired.inc()
                             to_expire.append((1, rid)) # 1 = expired normally
                             break
                         except Exception as e: logging.warning("failed to send %d to %s", rid, method_name, exc_info=e)

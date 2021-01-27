@@ -6,11 +6,9 @@ import discord
 from datetime import datetime
 import re
 import collections
-import prometheus_client
 
 import util
-
-achievements_achieved = prometheus_client.Counter("abr_achievements", "Achievements achieved by users")
+import metrics
 
 Achievement = collections.namedtuple("Achievement", ["name", "condition", "description"])
 
@@ -43,7 +41,7 @@ async def achieve(bot: commands.Bot, message: discord.Message, achievement):
     e = util.make_embed(description=description, title="Achievement achieved!", color=util.hashbow(achievement))
     e.set_thumbnail(url=await util.get_asset(bot, f"achievements/{achievement}.png"))
     await channel.send(embed=e)
-    achievements_achieved.inc()
+    metrics.achievements_achieved.inc()
     await bot.database.execute("INSERT INTO achievements VALUES (?, ?, ?)", (uid, achievement, util.timestamp()))
     await bot.database.commit()
     logging.info("awarded achievement %s to %s", message.author.name, achievement)

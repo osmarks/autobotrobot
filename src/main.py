@@ -225,6 +225,21 @@ async def on_ready():
     await bot.change_presence(status=discord.Status.online, 
         activity=discord.Activity(name=f"{bot.command_prefix}help", type=discord.ActivityType.listening))
 
+visible_users = prometheus_client.Gauge("abr_visible_users", "Users the bot can see")
+def get_visible_users():
+    return len(bot.users)
+visible_users.set_function(get_visible_users)
+
+heavserver_members = prometheus_client.Gauge("abr_heavserver_members", "Current member count of heavserver")
+def get_heavserver_members():
+    return len(bot.get_guild(util.config["heavserver"]["id"]).members)
+heavserver_members.set_function(get_heavserver_members)
+
+guild_count = prometheus_client.Gauge("abr_guilds", "Guilds the bot is in")
+def get_guild_count():
+    return len(bot.guilds)
+guild_count.set_function(get_guild_count)
+
 async def run_bot():
     bot.database = await db.init(config["database"])
     for ext in util.extensions:
