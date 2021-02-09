@@ -261,5 +261,7 @@ extensions = (
     "telephone",
     "achievement",
     "heavserver",
-    "voice"
+    "voice",
+    "commands",
+    "userdata"
 )

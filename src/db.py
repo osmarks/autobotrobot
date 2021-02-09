@@ -67,6 +67,15 @@ CREATE TABLE assets (
     identifier TEXT PRIMARY KEY,
     url TEXT NOT NULL
 );
+""",
+"""
+CREATE TABLE user_data (
+    user_id INTEGER NOT NULL,
+    guild_id INTEGER,
+    key TEXT NOT NULL,
+    value TEXT NOT NULL,
+    UNIQUE (user_id, guild_id, key)
+);
 """
 ]
 
