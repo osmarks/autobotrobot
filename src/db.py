@@ -95,7 +95,7 @@ async def init(db_path):
     aiosqlite.Connection._fetchone = _fetchone
     aiosqlite.Connection.execute_fetchone = execute_fetchone
 
-    version = (await (await db.execute("PRAGMA user_version")).fetchone())[0]
+    version = (await db.execute_fetchone("PRAGMA user_version"))[0]
     for i in range(version, len(migrations)):
         await db.executescript(migrations[i])
         # Normally interpolating like this would be a terrible idea because of SQL injection.

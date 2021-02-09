@@ -49,7 +49,8 @@ command_errors = prometheus_client.Counter("abr_errors", "Count of errors encoun
 async def on_command_error(ctx, err):
     #print(ctx, err)
     if isinstance(err, (commands.CommandNotFound, commands.CheckFailure)): return
-    if isinstance(err, (commands.MissingRequiredArgument, ValueError)): return await ctx.send(embed=util.error_embed(str(err)))
+    if isinstance(err, commands.CommandInvokeError) and isinstance(err.original, ValueError): return await ctx.send(embed=util.error_embed(str(err.original)))
+    if isinstance(err, commands.MissingRequiredArgument): return await ctx.send(embed=util.error_embed(str(err)))
     try:
         command_errors.inc()
         trace = re.sub("\n\n+", "\n", "\n".join(traceback.format_exception(err, err, err.__traceback__)))
