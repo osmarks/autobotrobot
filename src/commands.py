@@ -119,7 +119,7 @@ def setup(bot):
     You can also invite it to your server: <https://discordapp.com/oauth2/authorize?&client_id=509849474647064576&scope=bot&permissions=68608>
     """)
 
-    @bot.command(help="Roll simulated dice (basic NdX syntax only, no + etc., N <= 50, X <= 1000000).")
+    @bot.command(help="Roll simulated dice (basic NdX syntax, N <= 50, X <= 1e6).")
     async def roll(ctx, dice):
         match = re.match("([-0-9]*)d([0-9]+)", dice)
         if not match: raise ValueError("Invalid dice notation")
