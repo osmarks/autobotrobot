@@ -1,7 +1,8 @@
 import util
 
 def setup(bot):
-    @bot.group(name="userdata", aliases=["data"], brief="Store guild/user-localized data AND retrieve it later!")
+    @bot.group(name="userdata", aliases=["data"], help="""Store per-user data AND retrieve it later! Note that, due to the nature of storing things, it is necessary to set userdata before getting it.
+    Data can either be localized to a guild (guild scope) or shared between guilds (global scope), but is always tied to a user.""")
     async def userdata(ctx): pass
 
     async def get_userdata(db, user, guild, key):
