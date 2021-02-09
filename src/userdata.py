@@ -25,8 +25,9 @@ def setup(bot):
         else:
             await ctx.send(f"**{key}**: {row['value']}")
 
-    @userdata.command(name="list", help="List userdata keys in a given scope matching a query. Can also show associated values.")
+    @userdata.command(name="list", brief="List userdata keys in a given scope matching a query.")
     async def list_cmd(ctx, query="%", scope="guild", show_values: bool = False):
+        "Lsit userdata keys in a given scope (guild/global) matching your query (LIKE syntax). Can also show the associated values."
         if scope == "global":
             rows = await bot.database.execute_fetchall("SELECT * FROM user_data WHERE user_id = ? AND guild_id IS NULL AND key LIKE ?", (ctx.author.id, query))
         else:
@@ -64,6 +65,7 @@ def setup(bot):
 
     @userdata.command()
     async def inc(ctx, key, by: int = 1):
+        "Increase the integer value of a userdata key."
         check_key(key)
         row = await get_userdata(bot.database, ctx.author.id, ctx.guild.id, key)
         if not row:
@@ -78,6 +80,7 @@ def setup(bot):
 
     @userdata.command()
     async def delete(ctx, *keys):
+        "Delete the specified keys (smallest scope first)."
         for key in keys:
             row = await get_userdata(bot.database, ctx.author.id, ctx.guild.id, key)
             if not row:
