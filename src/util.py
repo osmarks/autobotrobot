@@ -182,9 +182,6 @@ lyrictable_raw = {
         }
 lyrictable = str.maketrans({v: k for k, v in lyrictable_raw.items()})
 
-apioprefixes = ["cryo", "meta", "chrono", "contra", "ortho", "macro", "micro", "apeiro", "Ægypto", "equi", "anglo", "atto", "auro", "Australo"
-    "dys", "eu", "femto", "giga", "infra", "Inver", "kilo", "meso", "mono", "nano", "neo", "omni", "pico", "proto", "pseudo", "semi", "quasi",
-    "Scando", "silico", "sub", "hyper", "super", "tauto", "topo", "trans", "ultra", "uni", "ur-", "yocto", "zepto", "zetta"]
 apioinfixes = ["cryo", "pyro", "chrono", "meta", "anarcho", "arachno", "aqua", "accelero", "hydro", "radio", "xeno", "morto", "thanato", "memeto", 
     "contra", "umbra", "macrono", "acantho", "acousto", "aceto", "acro", "aeolo", "hexa", "aero", "aesthio", "agro", "ferro", "alumino",
     "ammonio", "anti", "ankylo", "aniso", "annulo", "apo", "abio", "archeo", "argento", "arseno", "arithmo", "astro", "atlo", "auto", "axo",
@@ -203,7 +200,7 @@ apioinfixes = ["cryo", "pyro", "chrono", "meta", "anarcho", "arachno", "aqua", "
     "mono", "miso", "mnemo", "morpho", "myco", "myo", "myria", "mytho", "nano", "necro", "neo", "neutro", "neuro", "nitro", "nycto", "nucleo",
     "narco", "noto", "octo", "ochlo", "odonto", "oculo", "oligo", "opto", "organo", "ornitho", "osmio", "oneiro", "onto", "oxalo", "pachy",
     "paleo", "pali", "pallado", "pano", "para", "penta", "per", "patho", "pebi", "peloro", "pene", "petro", "pharma", "pheno", "philo", "pico",
-    "piezo", "phono", "photo", "phospho", "physio", "physico", "phyto", "pico", "post", "pisci", "placo", "platy", "pleo", "plumbo", "pluto",
+    "piezo", "phono", "photo", "phospho", "physio", "physico", "phyto", "post", "pisci", "placo", "platy", "pleo", "plumbo", "pluto",
     "pneumato", "politico", "proto", "potassio", "proteo", "pseudo", "psycho", "ptero", "pykno", "quasi", "quadri", "recti", "retino", "retro",
     "rheo", "rhino", "rhizo", "rhodo", "roto", "rutheno", "saccharo", "sapo", "sauro", "seismo", "seleno", "septa", "silico", "scoto", "semanto",
     "sialo", "socio", "sodio", "skeleto", "somato", "somno", "sono", "spectro", "speleo", "sphero", "spino", "spiro", "sporo", "stanno", "stato",
@@ -211,19 +208,20 @@ apioinfixes = ["cryo", "pyro", "chrono", "meta", "anarcho", "arachno", "aqua", "
     "temporo", "tera", "tetra", "thalasso", "thaumato", "thermo", "tephro", "tessera", "thio", "titano", "tomo", "topo", "tono", "tungsto",
     "turbo", "tyranno", "ultra", "undeca", "tribo", "trito", "tropho", "tropo", "uni", "urano", "video", "viro", "visuo", "xantho", "xenna",
     "xeri", "xipho", "xylo", "xyro", "yocto", "yttro", "zepto", "zetta", "zinco", "zirco", "zoo", "zono", "zygo", "templateo", "rustaceo", "mnesto",
-    "amnesto", "cetaceo", "anthropo", "ioctlo"]
+    "amnesto", "cetaceo", "anthropo", "ioctlo", "crustaceo", "citrono", "apeiro", "Ægypto", "equi", "anglo", "atto", "ortho", "macro", "micro", "auro", 
+    "Australo", "dys", "eu", "giga", "Inver", "omni", "semi", "Scando", "sub", "super", "trans", "ur-", "un", "mid", "mis", "ante", "intra"]
 apiosuffixes = ["hazard", "form"]
 
 def apioform():
     out = ""
-    if random.randint(0, 4) == 0:
-        out += random.choice(apioprefixes)
+    if random.randint(0, 3) == 0:
+        out += random.choice(apioinfixes)
     out += "apio"
     i = 1
     while True:
         out += random.choice(apioinfixes)
         if random.randint(0, i) > 0: break
-        i *= 2
+        i += 1
     out += random.choice(apiosuffixes)
     return out
 
