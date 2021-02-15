@@ -14,17 +14,10 @@ def setup(bot):
 
     @userdata.command(help="Get a userdata key. Checks guild first, then global.")
     async def get(ctx, *, key):
-        no_header = False
-        if key.startswith("noheader "):
-            key = key[9:]
-            no_header = True
         row = await get_userdata(bot.database, ctx.author.id, ctx.guild.id, key)
         if not row:
             raise ValueError("No such key")
-        if no_header:
-            await ctx.send(row["value"])
-        else:
-            await ctx.send(f"**{key}**: {row['value']}")
+        await ctx.send(row["value"])
 
     @userdata.command(name="list", brief="List userdata keys in a given scope matching a query.")
     async def list_cmd(ctx, query="%", scope="guild", show_values: bool = False):
@@ -46,8 +39,8 @@ def setup(bot):
         if len(key) > 128: raise ValueError("Key too long")
 
     def preprocess_value(value):
-        value = value.replace("\n", "").strip()
-        if len(value) > 256: raise ValueError("Value too long")
+        value = value.strip()
+        if len(value) > 1024: raise ValueError("Value too long")
         return value
 
     @userdata.command(name="set", help="Set a userdata key in the guild scope.")
@@ -76,7 +69,7 @@ def setup(bot):
             value = int(row["value"])
             guild = row["guild_id"]
         new_value = value + by
-        await set_userdata(bot.database, ctx.author.id, guild, key, str(new_value))
+        await set_userdata(bot.database, ctx.author.id, guild, key, preprocess_value(str(new_value)))
         await ctx.send(f"**{key}** set to {new_value}")
 
     @userdata.command()
