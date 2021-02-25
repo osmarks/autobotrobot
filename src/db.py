@@ -76,6 +76,20 @@ CREATE TABLE user_data (
     value TEXT NOT NULL,
     UNIQUE (user_id, guild_id, key)
 );
+""",
+"""
+CREATE TABLE links (
+    to_type TEXT NOT NULL,
+    to_id BLOB NOT NULL,
+    from_type TEXT NOT NULL,
+    from_id BLOB NOT NULL,
+    established_at INTEGER NOT NULL,
+    UNIQUE (to_type, to_id, from_type, from_id)
+);
+CREATE TABLE discord_webhooks (
+    channel_id INTEGER PRIMARY KEY,
+    webhook TEXT NOT NULL
+);
 """
 ]
 

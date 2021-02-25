@@ -11,6 +11,7 @@ import toml
 import os.path
 from discord.ext import commands
 import hashlib
+import time
 
 config = {}
 
@@ -21,6 +22,7 @@ def load_config():
 load_config()
 
 def timestamp(): return int(datetime.datetime.now(tz=datetime.timezone.utc).timestamp())
+def timestamp_µs(): return int(datetime.datetime.now(tz=datetime.timezone.utc).timestamp() * 1e6)
 
 prefixes = {
     # big SI prefixes
@@ -263,3 +265,20 @@ extensions = (
     "commands",
     "userdata"
 )
+
+# https://github.com/SawdustSoftware/simpleflake/blob/master/simpleflake/simpleflake.py
+
+SIMPLEFLAKE_EPOCH = 946702800
+#field lengths in bits
+SIMPLEFLAKE_TIMESTAMP_LENGTH = 43
+SIMPLEFLAKE_RANDOM_LENGTH = 21
+#left shift amounts
+SIMPLEFLAKE_RANDOM_SHIFT = 0
+SIMPLEFLAKE_TIMESTAMP_SHIFT = 21
+
+def random_id():
+    second_time = time.time()
+    second_time -= SIMPLEFLAKE_EPOCH
+    millisecond_time = int(second_time * 1000)
+    randomness = random.getrandbits(SIMPLEFLAKE_RANDOM_LENGTH)
+    return (millisecond_time << SIMPLEFLAKE_TIMESTAMP_SHIFT) + randomness

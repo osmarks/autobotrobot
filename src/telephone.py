@@ -6,6 +6,7 @@ import hashlib
 from datetime import datetime
 
 import util
+import eventbus
 
 # Generate a "phone" address
 # Not actually for phones
@@ -32,38 +33,35 @@ def setup(bot):
     async def get_addr_config(addr):
         return await bot.database.execute_fetchone("SELECT * FROM telephone_config WHERE id = ?", (addr,))
 
-    @bot.listen("on_message")
-    async def forward_call_messages(message):
-        channel = message.channel.id
-        if (message.author.discriminator == "0000" and message.author.bot) or message.author == bot.user or message.content == "": # check if webhook, from itself, or only has embeds
-            return
-        calls = await bot.database.execute_fetchall("""SELECT tcf.channel_id AS from_channel, tct.channel_id AS to_channel, 
-            tcf.webhook AS from_webhook, tct.webhook AS to_webhook FROM calls
-            JOIN telephone_config AS tcf ON tcf.id = calls.from_id JOIN telephone_config AS tct ON tct.id = calls.to_id
-            WHERE from_channel = ? OR to_channel = ?""", (channel, channel))
-        if calls == []: return
-        async def send_to(call):
-            if call["from_channel"] == channel:
-                other_channel, other_webhook = call["to_channel"], call["to_webhook"]
-            else:
-                other_channel, other_webhook = call["from_channel"], call["from_webhook"]
+    @telephone.command(brief="Link to other channels", help="""Connect to another channel on Discord or any supported bridges.
+    Virtual channels also exist.
+    """)
+    @commands.check(util.admin_check)
+    async def link(ctx, target_type, target_id):
+        try:
+            target_id = int(target_id)
+        except ValueError: pass
+        await eventbus.add_bridge_link(bot.database, ("discord", ctx.channel.id), (target_type, util.extract_codeblock(target_id)))
+        await ctx.send(f"Link established.")
+        pass
 
-            async def send_normal_message():
-                m = f"**{message.author.name}**: "
-                m += message.content[:2000 - len(m)]
-                await bot.get_channel(other_channel).send(m)
+    @telephone.command(brief="Undo link commands.")
+    @commands.check(util.admin_check)
+    async def unlink(ctx, target_type, target_id):
+        try:
+            target_id = int(target_id)
+        except ValueError: pass
+        await eventbus.remove_bridge_link(bot.database, ("discord", ctx.channel.id), (target_type, util.extract_codeblock(target_id)))
+        await ctx.send(f"Successfully deleted.")
+        pass
 
-            if other_webhook:
-                try:
-                    await discord.Webhook.from_url(other_webhook, adapter=discord.AsyncWebhookAdapter(bot.http._HTTPClient__session)).send(
-                        content=message.content, username=message.author.name, avatar_url=message.author.avatar_url,
-                        allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False))
-                except discord.errors.NotFound:
-                    logging.warn("channel %d webhook missing", other_channel)
-                    await send_normal_message()
-            else: await send_normal_message()
-                
-        await asyncio.gather(*map(send_to, calls))
+    @telephone.command(brief="Generate a webhook")
+    @commands.check(util.admin_check)
+    async def init_webhook(ctx):
+        webhook = (await ctx.channel.create_webhook(name="ABR webhook", reason=f"requested by {ctx.author.name}")).url
+        await bot.database.execute("INSERT OR REPLACE INTO discord_webhooks VALUES (?, ?)", (ctx.channel.id, webhook))
+        await bot.database.commit()
+        await ctx.send("Done.")
 
     @telephone.command()
     @commands.check(util.server_mod_check)
@@ -76,6 +74,7 @@ def setup(bot):
         if not info or not webhook:
             try:
                 webhook = (await ctx.channel.create_webhook(name="incoming message display", reason="configure for apiotelephone")).url
+                await bot.database.execute("INSERT OR REPLACE INTO discord_webhooks VALUES (?, ?)", (ctx.channel.id, webhook))
                 await ctx.send("Created webhook.")
             except discord.Forbidden as f:
                 logging.warn("could not create webhook in #%s %s", ctx.channel.name, ctx.guild.name, exc_info=f)
@@ -84,7 +83,7 @@ def setup(bot):
         await bot.database.commit()
         await ctx.send("Configured.")
 
-    @telephone.command(aliases=["call"])
+    @telephone.command(aliases=["call"], brief="Dial another telephone channel.")
     async def dial(ctx, address):
         # basic checks - ensure this is a phone channel and has no other open calls
         channel_info = await get_channel_config(ctx.channel.id)
@@ -127,6 +126,7 @@ def setup(bot):
         if em == "✅": # accept call
             await bot.database.execute("INSERT INTO calls VALUES (?, ?, ?)", (originating_address, address, util.timestamp()))
             await bot.database.commit()
+            await eventbus.add_bridge_link(bot.database, ("discord", ctx.channel.id), ("discord", recv_channel.id))
             await asyncio.gather(
                 ctx.send(embed=util.info_embed("Outgoing call", "Call accepted and connected.")),
                 recv_channel.send(embed=util.info_embed("Incoming call", "Call accepted and connected."))
@@ -134,10 +134,7 @@ def setup(bot):
         elif em == "❎": # drop call
             await ctx.send(embed=util.error_embed("Your call was declined.", "Call declined"))
 
-    async def get_calls(addr):
-        pass
-
-    @telephone.command(aliases=["disconnect", "quit"])
+    @telephone.command(aliases=["disconnect", "quit"], brief="Disconnect latest call.")
     async def hangup(ctx):
         channel_info = await get_channel_config(ctx.channel.id)
         addr = channel_info["id"]
@@ -155,13 +152,14 @@ def setup(bot):
             await bot.database.execute("DELETE FROM calls WHERE to_id = ? AND from_id = ?", (addr, other))
         await bot.database.commit()
         other_channel = (await get_addr_config(other))["channel_id"]
+        await eventbus.remove_bridge_link(bot.database, ("discord", other_channel), ("discord", ctx.channel.id))
 
         await asyncio.gather(
             ctx.send(embed=util.info_embed("Hung up", f"Call to {other} disconnected.")),
             bot.get_channel(other_channel).send(embed=util.info_embed("Hung up", f"Call to {addr} disconnected."))
         )
 
-    @telephone.command(aliases=["status"])
+    @telephone.command(aliases=["status"], brief="List inbound/outbound calls.")
     async def info(ctx):
         channel_info = await get_channel_config(ctx.channel.id)
         if not channel_info: return await ctx.send(embed=util.info_embed("Phone status", "Not a phone channel"))

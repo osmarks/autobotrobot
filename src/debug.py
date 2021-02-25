@@ -1,9 +1,10 @@
-import util
 import asyncio
 import traceback
 import re
 from discord.ext import commands
+
 import util
+import eventbus
 
 def setup(bot):
     @bot.group(help="Debug/random messing around utilities. Owner-only.")
@@ -26,7 +27,9 @@ def setup(bot):
                 **locals(),
                 "bot": bot,
                 "ctx": ctx,
-                "db": bot.database
+                "db": bot.database,
+                "util": util,
+                "eventbus": eventbus
             }
 
             def check(re, u): return str(re.emoji) == "❌" and u == ctx.author

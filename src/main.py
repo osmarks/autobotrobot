@@ -12,10 +12,13 @@ import collections
 import prometheus_client
 import prometheus_async.aio
 import typing
+import sys
 
 import tio
 import db
 import util
+import eventbus
+import irc_link
 import achievement
 
 config = util.config
@@ -47,7 +50,6 @@ async def on_message(message):
 command_errors = prometheus_client.Counter("abr_errors", "Count of errors encountered in executing commands.")
 @bot.event
 async def on_command_error(ctx, err):
-    #print(ctx, err)
     if isinstance(err, (commands.CommandNotFound, commands.CheckFailure)): return
     if isinstance(err, commands.CommandInvokeError) and isinstance(err.original, ValueError): return await ctx.send(embed=util.error_embed(str(err.original)))
     if isinstance(err, commands.MissingRequiredArgument): return await ctx.send(embed=util.error_embed(str(err)))
@@ -69,15 +71,52 @@ async def on_ready():
     await bot.change_presence(status=discord.Status.online, 
         activity=discord.Activity(name=f"{bot.command_prefix}help", type=discord.ActivityType.listening))
 
+webhooks = {}
+
+async def initial_load_webhooks(db):
+    for row in await db.execute_fetchall("SELECT * FROM discord_webhooks"):
+        webhooks[row["channel_id"]] = row["webhook"]
+
+@bot.listen("on_message")
+async def send_to_bridge(msg):
+    if msg.author == bot.user or msg.author.discriminator == "0000": return
+    if msg.content == "": return
+    channel_id = msg.channel.id
+    msg = eventbus.Message(eventbus.AuthorInfo(msg.author.name, msg.author.id, str(msg.author.avatar_url), msg.author.bot), msg.content, ("discord", channel_id), msg.id)
+    await eventbus.push(msg)
+
+async def on_bridge_message(channel_id, msg):
+    channel = bot.get_channel(channel_id)
+    if channel:
+        webhook = webhooks.get(channel_id)
+        if webhook:
+            wh_obj = discord.Webhook.from_url(webhook, adapter=discord.AsyncWebhookAdapter(bot.http._HTTPClient__session))
+            await wh_obj.send(
+                content=msg.message, username=msg.author.name, avatar_url=msg.author.avatar_url,
+                allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False))
+        else:
+            text = f"<{msg.author.name}> {msg.message}"
+            await channel.send(text[:2000], allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False))
+    else:
+        logging.warning("channel %d not found", channel_id)
+
+eventbus.add_listener("discord", on_bridge_message)
+
 visible_users = prometheus_client.Gauge("abr_visible_users", "Users the bot can see")
 def get_visible_users():
     return len(bot.users)
 visible_users.set_function(get_visible_users)
 
 heavserver_members = prometheus_client.Gauge("abr_heavserver_members", "Current member count of heavserver")
+heavserver_bots = prometheus_client.Gauge("abr_heavserver_bots", "Current bot count of heavserver")
 def get_heavserver_members():
+    if not bot.get_guild(util.config["heavserver"]["id"]): return 0
     return len(bot.get_guild(util.config["heavserver"]["id"]).members)
+def get_heavserver_bots():
+    if not bot.get_guild(util.config["heavserver"]["id"]): return 0
+    return len([ None for member in bot.get_guild(util.config["heavserver"]["id"]).members if member.bot ])
 heavserver_members.set_function(get_heavserver_members)
+heavserver_bots.set_function(get_heavserver_bots)
 
 guild_count = prometheus_client.Gauge("abr_guilds", "Guilds the bot is in")
 def get_guild_count():
@@ -86,6 +125,9 @@ guild_count.set_function(get_guild_count)
 
 async def run_bot():
     bot.database = await db.init(config["database"])
+    await eventbus.initial_load(bot.database)
+    await initial_load_webhooks(bot.database)
+    await irc_link.initialize()
     for ext in util.extensions:
         logging.info("loaded %s", ext)
         bot.load_extension(ext)
@@ -98,5 +140,6 @@ if __name__ == '__main__':
         loop.run_until_complete(run_bot())
     except KeyboardInterrupt:
         loop.run_until_complete(bot.logout())
+        sys.exit(0)
     finally:
         loop.close()
