@@ -7,7 +7,7 @@ def setup(bot):
 
     async def get_userdata(db, user, guild, key):
         return (await db.execute_fetchone("SELECT * FROM user_data WHERE user_id = ? AND guild_id = ? AND key = ?", (user, guild, key))
-            or await db.execute_fetchone("SELECT * FROM user_data WHERE user_id = ? AND guild_id IS NULL AND key = ?", (user, key)))
+            or await db.execute_fetchone("SELECT * FROM user_data WHERE user_id = ? AND guild_id = '_global' AND key = ?", (user, key)))
     async def set_userdata(db, user, guild, key, value):
         await db.execute("INSERT OR REPLACE INTO user_data VALUES (?, ?, ?, ?)", (user, guild, key, value))
         await bot.database.commit()
@@ -23,7 +23,7 @@ def setup(bot):
     async def list_cmd(ctx, query="%", scope="guild", show_values: bool = False):
         "Lsit userdata keys in a given scope (guild/global) matching your query (LIKE syntax). Can also show the associated values."
         if scope == "global":
-            rows = await bot.database.execute_fetchall("SELECT * FROM user_data WHERE user_id = ? AND guild_id IS NULL AND key LIKE ?", (ctx.author.id, query))
+            rows = await bot.database.execute_fetchall("SELECT * FROM user_data WHERE user_id = ? AND guild_id = '_global' AND key LIKE ?", (ctx.author.id, query))
         else:
             rows = await bot.database.execute_fetchall("SELECT * FROM user_data WHERE user_id = ? AND guild_id = ? AND key LIKE ?", (ctx.author.id, ctx.guild.id, query))
         out = []
@@ -54,7 +54,7 @@ def setup(bot):
     async def set_global(ctx, key, *, value):
         check_key(key)
         value = preprocess_value(value)
-        await set_userdata(bot.database, ctx.author.id, None, key, value)
+        await set_userdata(bot.database, ctx.author.id, "_global", key, value)
         await ctx.send(f"**{key}** set (scope global)")
 
     @userdata.command()
