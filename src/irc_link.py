@@ -33,7 +33,8 @@ async def initialize():
         if channel_name in util.config["irc"]["channels"]:
             if channel_name not in joined: conn.join(channel_name)
             line = msg.message.replace("\n", " ")
-            line = f"<{random_color(msg.author.id)}{msg.author.name}{color_code('')}> " + line.strip()[:400]
+            # ping fix - zero width space embedded in messages
+            line = f"<{random_color(msg.author.id)}{msg.author.name[0]}\u200B{msg.author.name[1:]}{color_code('')}> " + line.strip()[:400]
             conn.privmsg(channel_name, line)
         else:
             logging.warning("IRC channel %s not allowed", channel_name)
