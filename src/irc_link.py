@@ -15,12 +15,18 @@ def color_code(x):
     return f"\x03{x}"
 def random_color(id): return color_code(hashlib.blake2b(str(id).encode("utf-8")).digest()[0] % 13 + 2)
 
+global_conn = None
+
 async def initialize():
+    logging.info("Initializing IRC link")
+
     joined = set()
 
     loop = asyncio.get_event_loop()
     reactor = irc.client_aio.AioReactor(loop=loop)
     conn = await reactor.server().connect(util.config["irc"]["server"], util.config["irc"]["port"], util.config["irc"]["nick"])
+    global global_conn
+    global_conn = conn
 
     def inuse(conn, event):
         conn.nick(scramble(conn.get_nickname()))
@@ -52,3 +58,9 @@ async def initialize():
     conn.add_global_handler("pubmsg", pubmsg)
 
     eventbus.add_listener(util.config["irc"]["name"], on_bridge_message)
+
+def setup(bot):
+    asyncio.create_task(initialize())
+
+def teardown(bot):
+    if global_conn: global_conn.disconnect()

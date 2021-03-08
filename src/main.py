@@ -52,7 +52,8 @@ command_errors = prometheus_client.Counter("abr_errors", "Count of errors encoun
 async def on_command_error(ctx, err):
     if isinstance(err, (commands.CommandNotFound, commands.CheckFailure)): return
     if isinstance(err, commands.CommandInvokeError) and isinstance(err.original, ValueError): return await ctx.send(embed=util.error_embed(str(err.original)))
-    if isinstance(err, commands.MissingRequiredArgument): return await ctx.send(embed=util.error_embed(str(err)))
+    # TODO: really should find a way to detect ALL user errors here?
+    if isinstance(err, (commands.MissingRequiredArgument, commands.ExpectedClosingQuoteError, commands.InvalidEndOfQuotedStringError)): return await ctx.send(embed=util.error_embed(str(err)))
     try:
         command_errors.inc()
         trace = re.sub("\n\n+", "\n", "\n".join(traceback.format_exception(err, err, err.__traceback__)))
@@ -127,7 +128,6 @@ async def run_bot():
     bot.database = await db.init(config["database"])
     await eventbus.initial_load(bot.database)
     await initial_load_webhooks(bot.database)
-    await irc_link.initialize()
     for ext in util.extensions:
         logging.info("loaded %s", ext)
         bot.load_extension(ext)

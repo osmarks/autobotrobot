@@ -263,7 +263,8 @@ extensions = (
     "heavserver",
     "voice",
     "commands",
-    "userdata"
+    "userdata",
+    "irc_link"
 )
 
 # https://github.com/SawdustSoftware/simpleflake/blob/master/simpleflake/simpleflake.py
