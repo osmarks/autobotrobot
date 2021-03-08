@@ -53,7 +53,7 @@ async def on_command_error(ctx, err):
     if isinstance(err, (commands.CommandNotFound, commands.CheckFailure)): return
     if isinstance(err, commands.CommandInvokeError) and isinstance(err.original, ValueError): return await ctx.send(embed=util.error_embed(str(err.original)))
     # TODO: really should find a way to detect ALL user errors here?
-    if isinstance(err, (commands.MissingRequiredArgument, commands.ExpectedClosingQuoteError, commands.InvalidEndOfQuotedStringError)): return await ctx.send(embed=util.error_embed(str(err)))
+    if isinstance(err, (commands.UserInputError)): return await ctx.send(embed=util.error_embed(str(err)))
     try:
         command_errors.inc()
         trace = re.sub("\n\n+", "\n", "\n".join(traceback.format_exception(err, err, err.__traceback__)))
@@ -80,7 +80,8 @@ async def initial_load_webhooks(db):
 
 @bot.listen("on_message")
 async def send_to_bridge(msg):
-    if msg.author == bot.user or msg.author.discriminator == "0000": return
+    # discard webhooks and bridge messages (hackily, admittedly, not sure how else to do this)
+    if (msg.author == bot.user and msg.content[0] == "<") or msg.author.discriminator == "0000": return
     if msg.content == "": return
     channel_id = msg.channel.id
     msg = eventbus.Message(eventbus.AuthorInfo(msg.author.name, msg.author.id, str(msg.author.avatar_url), msg.author.bot), msg.content, ("discord", channel_id), msg.id)
