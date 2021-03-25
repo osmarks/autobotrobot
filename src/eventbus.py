@@ -22,7 +22,7 @@ def unpack_dataclass_without(d, without):
 @dataclasses.dataclass
 class Message:
     author: AuthorInfo
-    message: str
+    message: list[typing.Union[str, dict]]
     source: (str, any)
     id: int
 
@@ -75,7 +75,9 @@ async def push(msg: Message):
             for listener in listeners[dest_type]:
                 asyncio.ensure_future(listener(dest_channel, msg))
 
-def add_listener(s, l): listeners[s].add(l)
+def add_listener(s, l):
+    listeners[s].add(l)
+    return lambda: listeners[s].remove(l)
 
 async def add_bridge_link(db, c1, c2):
     logging.info("Bridging %s and %s", repr(c1), repr(c2))

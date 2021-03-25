@@ -264,7 +264,8 @@ extensions = (
     "voice",
     "commands",
     "userdata",
-    "irc_link"
+    "irc_link",
+    "discord_link"
 )
 
 # https://github.com/SawdustSoftware/simpleflake/blob/master/simpleflake/simpleflake.py

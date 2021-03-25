@@ -71,7 +71,7 @@ def setup(bot):
     @magic.command(help="Reload configuration file.")
     async def reload_config(ctx):
         util.load_config()
-        ctx.send("Done!")
+        await ctx.send("Done!")
 
     @magic.command(help="Reload extensions (all or the specified one).")
     async def reload_ext(ctx, ext="all"):

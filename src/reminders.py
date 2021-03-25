@@ -90,7 +90,7 @@ def setup(bot):
                             metrics.reminders_fired.inc()
                             to_expire.append((1, rid)) # 1 = expired normally
                             break
-                        except Exception as e: logging.warning("failed to send %d to %s", rid, method_name, exc_info=e)
+                        except Exception as e: logging.warning("Failed to send %d to %s", rid, method_name, exc_info=e)
                 except Exception as e:
                     logging.warning("Could not send reminder %d", rid, exc_info=e)
                     to_expire.append((2, rid)) # 2 = errored

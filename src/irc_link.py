@@ -5,6 +5,7 @@ import random
 import util
 import logging
 import hashlib
+import discord.ext.commands as commands
 
 def scramble(text):
     n = list(text)
@@ -15,7 +16,23 @@ def color_code(x):
     return f"\x03{x}"
 def random_color(id): return color_code(hashlib.blake2b(str(id).encode("utf-8")).digest()[0] % 13 + 2)
 
+def render_formatting(message):
+    out = ""
+    for seg in message:
+        if isinstance(seg, str):
+            out += seg.replace("\n", " ")
+        else:
+            kind = seg["type"]
+            #  TODO: check if user exists on both ends, and possibly drop if so
+            if kind == "user_mention":
+                out += f"@{random_color(seg['id'])}{seg['name']}{color_code('')}"
+            elif kind == "channel_mention": # these appear to be clickable across servers/guilds
+                out += f"#{seg['name']}"
+            else: logging.warn("Unrecognized message seg %s", kind)
+    return out.strip()
+
 global_conn = None
+unlisten = None
 
 async def initialize():
     logging.info("Initializing IRC link")
@@ -32,15 +49,14 @@ async def initialize():
         conn.nick(scramble(conn.get_nickname()))
 
     def pubmsg(conn, event):
-        msg = eventbus.Message(eventbus.AuthorInfo(event.source.nick, str(event.source), None), " ".join(event.arguments), (util.config["irc"]["name"], event.target), util.random_id())
+        msg = eventbus.Message(eventbus.AuthorInfo(event.source.nick, str(event.source), None), [" ".join(event.arguments)], (util.config["irc"]["name"], event.target), util.random_id())
         asyncio.create_task(eventbus.push(msg))
 
     async def on_bridge_message(channel_name, msg):
         if channel_name in util.config["irc"]["channels"]:
             if channel_name not in joined: conn.join(channel_name)
-            line = msg.message.replace("\n", " ")
             # ping fix - zero width space embedded in messages
-            line = f"<{random_color(msg.author.id)}{msg.author.name[0]}\u200B{msg.author.name[1:]}{color_code('')}> " + line.strip()[:400]
+            line = f"<{random_color(msg.author.id)}{msg.author.name[0]}\u200B{msg.author.name[1:]}{color_code('')}> " + render_formatting(msg.message)[:400]
             conn.privmsg(channel_name, line)
         else:
             logging.warning("IRC channel %s not allowed", channel_name)
@@ -48,19 +64,21 @@ async def initialize():
     def connect(conn, event):
         for channel in util.config["irc"]["channels"]:
             conn.join(channel)
-            logging.info("connected to %s", channel)
+            logging.info("Connected to %s on IRC", channel)
             joined.add(channel)
 
     # TODO: do better thing
     conn.add_global_handler("welcome", connect)
-    conn.add_global_handler("disconnect", lambda conn, event: logging.warn("disconnected from IRC, oh no"))
+    conn.add_global_handler("disconnect", lambda conn, event: logging.warn("Disconnected from IRC"))
     conn.add_global_handler("nicknameinuse", inuse)
     conn.add_global_handler("pubmsg", pubmsg)
 
-    eventbus.add_listener(util.config["irc"]["name"], on_bridge_message)
+    global unlisten
+    unlisten = eventbus.add_listener(util.config["irc"]["name"], on_bridge_message)
 
 def setup(bot):
     asyncio.create_task(initialize())
 
 def teardown(bot):
     if global_conn: global_conn.disconnect()
+    if unlisten: unlisten()

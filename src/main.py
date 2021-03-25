@@ -51,14 +51,16 @@ command_errors = prometheus_client.Counter("abr_errors", "Count of errors encoun
 @bot.event
 async def on_command_error(ctx, err):
     if isinstance(err, (commands.CommandNotFound, commands.CheckFailure)): return
-    if isinstance(err, commands.CommandInvokeError) and isinstance(err.original, ValueError): return await ctx.send(embed=util.error_embed(str(err.original)))
+    if isinstance(err, commands.CommandInvokeError) and isinstance(err.original, ValueError):
+        return await ctx.send(embed=util.error_embed(str(err.original), title=f"Error in {ctx.invoked_with}"))
     # TODO: really should find a way to detect ALL user errors here?
-    if isinstance(err, (commands.UserInputError)): return await ctx.send(embed=util.error_embed(str(err)))
+    if isinstance(err, (commands.UserInputError)):
+        return await ctx.send(embed=util.error_embed(str(err), title=f"Error in {ctx.invoked_with}"))
     try:
         command_errors.inc()
         trace = re.sub("\n\n+", "\n", "\n".join(traceback.format_exception(err, err, err.__traceback__)))
-        logging.error("command error occured (in %s)", ctx.invoked_with, exc_info=err)
-        await ctx.send(embed=util.error_embed(util.gen_codeblock(trace), title="Internal error"))
+        logging.error("Command error occured (in %s)", ctx.invoked_with, exc_info=err)
+        await ctx.send(embed=util.error_embed(util.gen_codeblock(trace), title=f"Internal error in {ctx.invoked_with}"))
         await achievement.achieve(ctx.bot, ctx.message, "error")
     except Exception as e: print("meta-error:", e)
 
@@ -71,38 +73,6 @@ async def on_ready():
     logging.info("Connected as " + bot.user.name)
     await bot.change_presence(status=discord.Status.online, 
         activity=discord.Activity(name=f"{bot.command_prefix}help", type=discord.ActivityType.listening))
-
-webhooks = {}
-
-async def initial_load_webhooks(db):
-    for row in await db.execute_fetchall("SELECT * FROM discord_webhooks"):
-        webhooks[row["channel_id"]] = row["webhook"]
-
-@bot.listen("on_message")
-async def send_to_bridge(msg):
-    # discard webhooks and bridge messages (hackily, admittedly, not sure how else to do this)
-    if (msg.author == bot.user and msg.content[0] == "<") or msg.author.discriminator == "0000": return
-    if msg.content == "": return
-    channel_id = msg.channel.id
-    msg = eventbus.Message(eventbus.AuthorInfo(msg.author.name, msg.author.id, str(msg.author.avatar_url), msg.author.bot), msg.content, ("discord", channel_id), msg.id)
-    await eventbus.push(msg)
-
-async def on_bridge_message(channel_id, msg):
-    channel = bot.get_channel(channel_id)
-    if channel:
-        webhook = webhooks.get(channel_id)
-        if webhook:
-            wh_obj = discord.Webhook.from_url(webhook, adapter=discord.AsyncWebhookAdapter(bot.http._HTTPClient__session))
-            await wh_obj.send(
-                content=msg.message, username=msg.author.name, avatar_url=msg.author.avatar_url,
-                allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False))
-        else:
-            text = f"<{msg.author.name}> {msg.message}"
-            await channel.send(text[:2000], allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False))
-    else:
-        logging.warning("channel %d not found", channel_id)
-
-eventbus.add_listener("discord", on_bridge_message)
 
 visible_users = prometheus_client.Gauge("abr_visible_users", "Users the bot can see")
 def get_visible_users():
@@ -128,9 +98,8 @@ guild_count.set_function(get_guild_count)
 async def run_bot():
     bot.database = await db.init(config["database"])
     await eventbus.initial_load(bot.database)
-    await initial_load_webhooks(bot.database)
     for ext in util.extensions:
-        logging.info("loaded %s", ext)
+        logging.info("Loaded %s", ext)
         bot.load_extension(ext)
     await bot.start(config["token"])
 

@@ -44,7 +44,7 @@ async def achieve(bot: commands.Bot, message: discord.Message, achievement):
     metrics.achievements_achieved.inc()
     await bot.database.execute("INSERT INTO achievements VALUES (?, ?, ?)", (uid, achievement, util.timestamp()))
     await bot.database.commit()
-    logging.info("awarded achievement %s to %s", message.author.name, achievement)
+    logging.info("Awarded achievement %s to %s", message.author.name, achievement)
 
 def setup(bot):
     @bot.group(name="achievements", aliases=["ach", "achieve", "achievement"], brief="Achieve a wide variety of fun achievements!", help=f"""

@@ -38,20 +38,22 @@ def setup(bot):
     """)
     @commands.check(util.admin_check)
     async def link(ctx, target_type, target_id):
+        target_id = util.extract_codeblock(target_id)
         try:
             target_id = int(target_id)
         except ValueError: pass
-        await eventbus.add_bridge_link(bot.database, ("discord", ctx.channel.id), (target_type, util.extract_codeblock(target_id)))
+        await eventbus.add_bridge_link(bot.database, ("discord", ctx.channel.id), (target_type, target_id))
         await ctx.send(f"Link established.")
         pass
 
     @telephone.command(brief="Undo link commands.")
     @commands.check(util.admin_check)
     async def unlink(ctx, target_type, target_id):
+        target_id = util.extract_codeblock(target_id)
         try:
             target_id = int(target_id)
         except ValueError: pass
-        await eventbus.remove_bridge_link(bot.database, ("discord", ctx.channel.id), (target_type, util.extract_codeblock(target_id)))
+        await eventbus.remove_bridge_link(bot.database, ("discord", ctx.channel.id), (target_type, target_id))
         await ctx.send(f"Successfully deleted.")
         pass
 
@@ -77,7 +79,7 @@ def setup(bot):
                 await bot.database.execute("INSERT OR REPLACE INTO discord_webhooks VALUES (?, ?)", (ctx.channel.id, webhook))
                 await ctx.send("Created webhook.")
             except discord.Forbidden as f:
-                logging.warn("could not create webhook in #%s %s", ctx.channel.name, ctx.guild.name, exc_info=f)
+                logging.warn("Could not create webhook in #%s %s", ctx.channel.name, ctx.guild.name, exc_info=f)
                 await ctx.send("Webhook creation failed - please ensure permissions are available. This is not necessary but is recommended.")
         await bot.database.execute("INSERT OR REPLACE INTO telephone_config VALUES (?, ?, ?, ?)", (num, ctx.guild.id, ctx.channel.id, webhook))
         await bot.database.commit()
