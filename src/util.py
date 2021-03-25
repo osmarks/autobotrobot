@@ -265,7 +265,8 @@ extensions = (
     "commands",
     "userdata",
     "irc_link",
-    "discord_link"
+    "discord_link",
+    "duckduckgo"
 )
 
 # https://github.com/SawdustSoftware/simpleflake/blob/master/simpleflake/simpleflake.py

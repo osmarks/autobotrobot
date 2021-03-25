@@ -25,11 +25,11 @@ config = util.config
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(asctime)s %(message)s", datefmt="%H:%M:%S %d/%m/%Y")
 
-#intents = discord.Intents.default()
-#intents.members = True
+intents = discord.Intents.default()
+intents.members = True
 
 bot = commands.Bot(command_prefix=config["prefix"], description="AutoBotRobot, the most useless bot in the known universe." + util.config.get("description_suffix", ""), 
-    case_insensitive=True, allowed_mentions=discord.AllowedMentions(everyone=False, users=True, roles=True))
+    case_insensitive=True, allowed_mentions=discord.AllowedMentions(everyone=False, users=True, roles=True), intents=intents)
 bot._skip_check = lambda x, y: False
 
 messages = prometheus_client.Counter("abr_messages", "Messages seen/handled by bot")
