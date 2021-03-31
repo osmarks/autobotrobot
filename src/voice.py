@@ -7,7 +7,6 @@ import requests
 import io
 from discord.ext import commands
 
-
 class HTTPSource(discord.AudioSource):
     def __init__(self, url):
         self.url = url
@@ -24,15 +23,20 @@ def setup(bot):
     async def radio(ctx): pass
 
     @radio.command()
-    async def connect(ctx, thing="main"):
-        voice = ctx.author.voice
-        if not voice: return await ctx.send(embed=util.error_embed("You are not in a voice channel."))
-        if voice.mute: return await ctx.send(embed=util.error_embed("You are muted."))
+    async def connect(ctx, thing="main", channel_id: int = None):
         thing_url = util.config["radio_urls"].get(thing, None)
         if thing_url == None: return await ctx.send(embed=util.error_embed("No such radio thing."))
+        if channel_id:
+            channel = await bot.fetch_channel(channel_id)
+            if not channel: return await ctx.send(embed=util.error_embed("No such channel."))
+        else:
+            voice = ctx.author.voice
+            if not voice: return await ctx.send(embed=util.error_embed("You are not in a voice channel."))
+            if voice.mute: return await ctx.send(embed=util.error_embed("You are muted."))
+            channel = voice.channel
         existing = ctx.guild.voice_client
         if existing: await existing.disconnect()
-        vc = await voice.channel.connect()
+        vc = await channel.connect()
         src = HTTPSource(thing_url)
         await src.start()
         vc.play(src)
