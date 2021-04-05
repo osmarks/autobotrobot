@@ -28,7 +28,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(asctime)s %(mess
 intents = discord.Intents.default()
 intents.members = True
 
-bot = commands.Bot(command_prefix=config["prefix"], description="AutoBotRobot, the most useless bot in the known universe." + util.config.get("description_suffix", ""), 
+bot = commands.Bot(command_prefix=commands.when_mentioned_or(config["prefix"]), description="AutoBotRobot, the most useless bot in the known universe." + util.config.get("description_suffix", ""), 
     case_insensitive=True, allowed_mentions=discord.AllowedMentions(everyone=False, users=True, roles=True), intents=intents)
 bot._skip_check = lambda x, y: False
 
@@ -72,7 +72,7 @@ async def andrew_bad(ctx):
 async def on_ready():
     logging.info("Connected as " + bot.user.name)
     await bot.change_presence(status=discord.Status.online, 
-        activity=discord.Activity(name=f"{bot.command_prefix}help", type=discord.ActivityType.listening))
+        activity=discord.Activity(name=f"{config['prefix']}help", type=discord.ActivityType.listening))
 
 visible_users = prometheus_client.Gauge("abr_visible_users", "Users the bot can see")
 def get_visible_users():

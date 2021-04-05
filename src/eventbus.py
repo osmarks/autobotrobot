@@ -79,20 +79,20 @@ def add_listener(s, l):
     listeners[s].add(l)
     return lambda: listeners[s].remove(l)
 
-async def add_bridge_link(db, c1, c2):
-    logging.info("Bridging %s and %s", repr(c1), repr(c2))
+async def add_bridge_link(db, c1, c2, cause=None, bidirectional=True):
+    logging.info("Bridging %s and %s (bidirectional: %s)", repr(c1), repr(c2), bidirectional)
     links[c1].add(c2)
-    links[c2].add(c1)
-    await db.execute("INSERT INTO links VALUES (?, ?, ?, ?, ?) ON CONFLICT DO NOTHING", (c1[0], c1[1], c2[0], c2[1], util.timestamp()))
-    await db.execute("INSERT INTO links VALUES (?, ?, ?, ?, ?) ON CONFLICT DO NOTHING", (c2[0], c2[1], c1[0], c1[1], util.timestamp()))
+    if bidirectional: links[c2].add(c1)
+    await db.execute("INSERT INTO links VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING", (c1[0], c1[1], c2[0], c2[1], util.timestamp(), cause))
+    if bidirectional: await db.execute("INSERT INTO links VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING", (c2[0], c2[1], c1[0], c1[1], util.timestamp(), cause))
     await db.commit()
 
-async def remove_bridge_link(db, c1, c2):
-    logging.info("Unbridging %s and %s", repr(c1), repr(c2))
+async def remove_bridge_link(db, c1, c2, bidirectional=True):
+    logging.info("Unbridging %s and %s (bidirectional: %s)", repr(c1), repr(c2), bidirectional)
     links[c1].remove(c2)
-    links[c2].remove(c1)
+    if bidirectional: links[c2].remove(c1)
     await db.execute("DELETE FROM links WHERE (to_type = ? AND to_id = ?) AND (from_type = ? AND from_id = ?)", (c1[0], c1[1], c2[0], c2[1]))
-    await db.execute("DELETE FROM links WHERE (to_type = ? AND to_id = ?) AND (from_type = ? AND from_id = ?)", (c2[0], c2[1], c1[0], c1[1]))
+    if bidirectional: await db.execute("DELETE FROM links WHERE (to_type = ? AND to_id = ?) AND (from_type = ? AND from_id = ?)", (c2[0], c2[1], c1[0], c1[1]))
     await db.commit()
 
 async def initial_load(db):

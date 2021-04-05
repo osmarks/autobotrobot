@@ -265,7 +265,6 @@ extensions = (
     "commands",
     "userdata",
     "irc_link",
-    "discord_link",
     "duckduckgo"
 )
 

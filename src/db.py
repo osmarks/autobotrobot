@@ -97,6 +97,9 @@ UPDATE user_data SET guild_id = '_global' WHERE rowid IN
     (SELECT rowid FROM user_data d WHERE d.key = user_data.key AND d.user_id = user_data.user_id ORDER BY rowid DESC LIMIT 1) 
     FROM user_data WHERE guild_id IS NULL GROUP BY user_id, key);
 DELETE FROM user_data WHERE guild_id IS NULL;
+""",
+"""
+ALTER TABLE links ADD COLUMN cause TEXT;
 """
 ]
 
