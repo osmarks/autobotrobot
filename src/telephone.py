@@ -107,7 +107,7 @@ class Telephone(commands.Cog):
 
     @commands.group(name="apiotelephone", aliases=["tel", "tele", "telephone", "apiotel"], brief="ApioTelephone lets you 'call' other servers.")
     async def telephone(self, ctx):
-        f"""Call other (participating) servers with ApioTelephone! To configure a channel for telephony, use the setup command (requires Manage Channels).
+        """Call other (participating) servers with ApioTelephone! To configure a channel for telephony, use the setup command (requires Manage Channels).
 It's recommended that you give the bot Manage Webhooks permissions in this channel so that it can use webhook calls mode.
 To place a call, use dial [number] - the other end has to accept the call.
 When you want to end a call, use hangup.
@@ -270,13 +270,13 @@ When you want to end a call, use hangup.
 
     @telephone.command(brief="Dump links out of current channel.")
     async def graph(self, ctx):
-        graph = pydot.Dot("linkgraph")
+        graph = pydot.Dot("linkgraph", ratio="fill")
         seen = set()
         seen_edges = set()
         def node_name(x):
             if x[0] == "discord":
                 chan = self.bot.get_channel(x[1])
-                if chan:
+                if chan and getattr(chan, "name", False):
                     out = "#" + chan.name
                     if chan.guild:
                         out = chan.guild.name + "/" + out
