@@ -265,7 +265,8 @@ extensions = (
     "commands",
     "userdata",
     "irc_link",
-    "duckduckgo"
+    "duckduckgo",
+    "esoserver"
 )
 
 # https://github.com/SawdustSoftware/simpleflake/blob/master/simpleflake/simpleflake.py

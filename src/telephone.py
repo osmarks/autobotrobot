@@ -173,6 +173,12 @@ When you want to end a call, use hangup.
         await self.bot.database.commit()
         await ctx.send("Configured.")
 
+    @telephone.command(aliases=["rcall"], brief="Dial another telephone channel.")
+    async def rdial(self, ctx):
+        # TODO: this is not very performant
+        random = (await self.bot.database.execute_fetchone("SELECT id FROM telephone_config ORDER BY RANDOM()"))["id"]
+        await self.dial(ctx, random)
+
     @telephone.command(aliases=["call"], brief="Dial another telephone channel.")
     async def dial(self, ctx, address):
         # basic checks - ensure this is a phone channel and has no other open calls
