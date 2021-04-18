@@ -6,6 +6,7 @@ import util
 import logging
 import hashlib
 import discord.ext.commands as commands
+from jaraco.stream import buffer
 
 def scramble(text):
     n = list(text)
@@ -40,6 +41,7 @@ async def initialize():
     joined = set()
 
     loop = asyncio.get_event_loop()
+    irc.client.ServerConnection.buffer_class = buffer.LenientDecodingLineBuffer # should not crash in the face of invalid UTF-8
     reactor = irc.client_aio.AioReactor(loop=loop)
     conn = await reactor.server().connect(util.config["irc"]["server"], util.config["irc"]["port"], util.config["irc"]["nick"])
     global global_conn
