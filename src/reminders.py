@@ -28,7 +28,7 @@ def setup(bot):
             now = datetime.now(tz=timezone.utc)
             time = util.parse_time(time)
         except:
-            await ctx.send(embed=util.error_embed("Invalid time (wrong format/too large/non-integer months or years)"))
+            await ctx.send(embed=util.error_embed("Invalid time (wrong format/too large months or years)"))
             return
         await bot.database.execute("INSERT INTO reminders (remind_timestamp, created_timestamp, reminder, expired, extra) VALUES (?, ?, ?, ?, ?)", 
             (time.timestamp(), now.timestamp(), reminder, 0, util.json_encode(extra_data)))

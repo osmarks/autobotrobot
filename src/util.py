@@ -12,6 +12,7 @@ import os.path
 from discord.ext import commands
 import hashlib
 import time
+import math
 
 config = {}
 
@@ -60,12 +61,17 @@ tu_mappings = {
     "ke": (864, "seconds")
 }
 
+fractional_tu_mappings = {
+    "years": (365.25, "days"), # Julian year
+    "months": (30.4375, "days") # average month length
+}
+
 def rpartfor(u):
     if u[0][-1] == "s": 
         l = [u[0] + "?"]
         l.extend(u[1:])
     else: l = u
-    return f"(?:(?P<{u[0]}>{number})(?:{'|'.join(l)}))?"
+    return f"(?:(?P<{u[0]}>{number})(?:{'|'.join(l)}))?[\t\n\r ]*"
 
 short_timedelta_regex = re.compile("\n".join(map(rpartfor, time_units)), re.VERBOSE)
 
@@ -86,6 +92,12 @@ def parse_short_timedelta(text):
         qty, resunit = mapping
         data[resunit] += qty * data[tu]
         del data[tu]
+    for tu, (qty, unit) in fractional_tu_mappings.items():
+        if tu in data and math.floor(data[tu]) != data[tu]:
+            whole = math.floor(data[tu])
+            fractional = data[tu] - whole
+            data[tu] = whole
+            data[unit] += fractional * qty
     return datetime.datetime.now(tz=datetime.timezone.utc) + relativedelta(**data)
 
 cal = parsedatetime.Calendar()
