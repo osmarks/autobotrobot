@@ -65,7 +65,7 @@ async def initialize():
 
     def connect(conn, event):
         for channel in util.config["irc"]["channels"]:
-            conn.join(channel)
+            conn.join(channel, key=util.config["irc"]["channel_keys"].get(channel, ""))
             logging.info("Connected to %s on IRC", channel)
             joined.add(channel)
 

@@ -113,10 +113,11 @@ def setup(bot):
     @bot.command(help="Get some information about the bot.", aliases=["invite"])
     async def about(ctx):
         await ctx.send("""**AutoBotRobot: The least useful Discord bot ever designed.**
-    AutoBotRobot has many features, but not necessarily any practical ones.
-    It can execute code via TIO.run, do reminders, print fortunes, and not any more!
-    AutoBotRobot is open source - the code is available at <https://github.com/osmarks/autobotrobot> - and you could run your own instance if you wanted to and could get around the complete lack of user guide or documentation.
-    You can also invite it to your server: <https://discordapp.com/oauth2/authorize?&client_id=509849474647064576&scope=bot&permissions=68608>
+AutoBotRobot has many features, but not necessarily any practical ones.
+It can execute code via TIO.run, do reminders, print fortunes, and not any more!
+AutoBotRobot is open source - the code is available at <https://github.com/osmarks/autobotrobot> - and you could run your own instance if you wanted to and could get around the complete lack of user guide or documentation.
+You can also invite it to your server: <https://discordapp.com/oauth2/authorize?&client_id=509849474647064576&scope=bot&permissions=68608>
+AutoBotRobot is operated by gollark/osmarks.
     """)
 
     @bot.command(help="Roll simulated dice (basic NdX syntax, N <= 50, X <= 1e6).")
