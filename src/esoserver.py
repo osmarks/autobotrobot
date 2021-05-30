@@ -11,7 +11,7 @@ role_transfer_lock = asyncio.Lock()
 def setup(bot):
 	@bot.listen()
 	async def on_message(message):
-		if message.guild.id == util.config["esoserver"]["id"]:
+		if message.guild and message.guild.id == util.config["esoserver"]["id"]:
 			async with role_transfer_lock: # prevent concurrency horrors - serialize accesses, probably
 				for role in message.role_mentions:
 					if role.id == util.config["esoserver"]["transfer_role"]: # transfer the role from sender to other pinged person

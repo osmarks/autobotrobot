@@ -42,11 +42,14 @@ def setup(bot):
 
     async def send_by_dm(info, text):
         user = bot.get_user(info["author_id"])
+        if not user:
+            user = await bot.fetch_user(info["author_id"])
         if not user: raise Exception(f"user {info['author_id']} unavailable/nonexistent")
         if not user.dm_channel: await user.create_dm()
         await user.dm_channel.send(text)
 
     async def send_to_guild(info, text):
+        if not "guild_id" in info: raise Exception("Guild unknown")
         guild = bot.get_guild(info["guild_id"])
         member = guild.get_member(info["author_id"])
         self = guild.get_member(bot.user.id)

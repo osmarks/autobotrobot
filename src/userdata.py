@@ -21,7 +21,7 @@ def setup(bot):
 
     @userdata.command(name="list", brief="List userdata keys in a given scope matching a query.")
     async def list_cmd(ctx, query="%", scope="guild", show_values: bool = False):
-        "Lsit userdata keys in a given scope (guild/global) matching your query (LIKE syntax). Can also show the associated values."
+        "List userdata keys in a given scope (guild/global) matching your query (LIKE syntax). Can also show the associated values."
         if scope == "global":
             rows = await bot.database.execute_fetchall("SELECT * FROM user_data WHERE user_id = ? AND guild_id = '_global' AND key LIKE ?", (ctx.author.id, query))
         else:
