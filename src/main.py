@@ -62,7 +62,8 @@ async def on_command_error(ctx, err):
         logging.error("Command error occured (in %s)", ctx.invoked_with, exc_info=err)
         await ctx.send(embed=util.error_embed(util.gen_codeblock(trace), title=f"Internal error in {ctx.invoked_with}"))
         await achievement.achieve(ctx.bot, ctx.message, "error")
-    except Exception as e: print("meta-error:", e)
+    except Exception as e:
+        logging.exception("Error in error handling!", e)
 
 @bot.check
 async def andrew_bad(ctx):
@@ -103,7 +104,7 @@ async def run_bot():
         bot.load_extension(ext)
     await bot.start(config["token"])
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.create_task(prometheus_async.aio.web.start_http_server(port=config["metrics_port"]))
     try:

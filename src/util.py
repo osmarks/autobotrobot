@@ -277,7 +277,7 @@ extensions = (
     "commands",
     "userdata",
     "irc_link",
-    "duckduckgo",
+    "search",
     "esoserver"
 )
 
