@@ -63,7 +63,7 @@ async def on_command_error(ctx, err):
         await ctx.send(embed=util.error_embed(util.gen_codeblock(trace), title=f"Internal error in {ctx.invoked_with}"))
         await achievement.achieve(ctx.bot, ctx.message, "error")
     except Exception as e:
-        logging.exception("Error in error handling!", e)
+        logging.exception("Error in command error handling.")
 
 @bot.check
 async def andrew_bad(ctx):
@@ -107,8 +107,9 @@ async def run_bot():
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.create_task(prometheus_async.aio.web.start_http_server(port=config["metrics_port"]))
+    loop.create_task(run_bot())
     try:
-        loop.run_until_complete(run_bot())
+        loop.run_forever()
     except KeyboardInterrupt:
         loop.run_until_complete(bot.logout())
         sys.exit(0)

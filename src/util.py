@@ -18,7 +18,7 @@ config = {}
 
 # update in place for runtime config reload
 def load_config():
-    for k, v in toml.load(open("config.toml", "r")).items(): config[k] = v
+    for k, v in toml.load(open(os.path.join(os.path.dirname(__file__), "../config.toml"), "r")).items(): config[k] = v
 
 load_config()
 
