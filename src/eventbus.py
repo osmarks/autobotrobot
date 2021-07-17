@@ -44,6 +44,7 @@ def find_all_destinations(source):
         visited.add(current)
     return visited
 
+# 5 messages per 5 seconds from each input channel
 RATE = 10.0
 PER = 5000000.0 # µs
 

@@ -69,6 +69,14 @@ class Telephone(commands.Cog):
         self.webhooks = {}
         self.bot = bot
         self.unlisten = eventbus.add_listener("discord", self.on_bridge_message)
+        self.webhook_queue = asyncio.Queue(50)
+        self.webhook_queue_handler_task = asyncio.create_task(self.send_webhooks())
+
+    async def send_webhooks(self):
+        while True:
+            webhook, content, username, avatar_url = await self.webhook_queue.get()
+            wh_obj = discord.Webhook.from_url(webhook, adapter=discord.AsyncWebhookAdapter(self.bot.http._HTTPClient__session))
+            await wh_obj.send(content=content, username=username, avatar_url=avatar_url, allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False))
 
     async def initial_load_webhooks(self):
         rows = await self.bot.database.execute_fetchall("SELECT * FROM discord_webhooks")
@@ -81,10 +89,11 @@ class Telephone(commands.Cog):
         if channel:
             webhook = self.webhooks.get(channel_id)
             if webhook:
-                wh_obj = discord.Webhook.from_url(webhook, adapter=discord.AsyncWebhookAdapter(self.bot.http._HTTPClient__session))
-                await wh_obj.send(
-                    content=render_formatting(channel, msg.message)[:2000], username=msg.author.name, avatar_url=msg.author.avatar_url,
-                    allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False))
+                try:
+                    self.webhook_queue.put_nowait((webhook, render_formatting(channel, msg.message)[:2000], msg.author.name, msg.author.avatar_url))
+                except asyncio.QueueFull:
+                    text = f"<{msg.author.name}> {render_formatting(channel, msg.message)}"
+                    await channel.send(text[:2000], allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False))
             else:
                 text = f"<{msg.author.name}> {render_formatting(channel, msg.message)}"
                 await channel.send(text[:2000], allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False))
@@ -102,6 +111,7 @@ class Telephone(commands.Cog):
 
     def cog_unload(self):
         self.unlisten()
+        self.webhook_queue_handler_task.cancel()
 
     # ++tel commands
 
