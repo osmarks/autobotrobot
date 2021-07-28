@@ -8,7 +8,7 @@ import metrics
 
 def setup(bot):
     @bot.command(brief="Set a reminder to be reminded about later.", rest_is_raw=True, help="""Sets a reminder which you will (probably) be reminded about at/after the specified time.
-    All times are UTC.
+    All times are UTC unless overridden.
     Reminders are checked every minute, so while precise times are not guaranteed, reminders should under normal conditions be received within 2 minutes of what you specify.
     Note that due to technical limitations reminders beyond the year 10000 CE or in the past cannot currently be handled.
     Note that reminder delivery is not guaranteed, due to possible issues including but not limited to: data loss, me eventually not caring, the failure of Discord (in this case message delivery will still be attempted manually on a case-by-case basis), the collapse of human civilization, or other existential risks.""")
@@ -24,16 +24,18 @@ def setup(bot):
             "guild_id": ctx.message.guild and ctx.message.guild.id,
             "original_time_spec": time
         }
+        tz = await util.get_user_timezone(ctx)
         try:
             now = datetime.now(tz=timezone.utc)
-            time = util.parse_time(time)
+            time = util.parse_time(time, tz)
         except:
             await ctx.send(embed=util.error_embed("Invalid time (wrong format/too large months or years)"))
             return
+        utc_time, local_time = util.in_timezone(time, tz)
         await bot.database.execute("INSERT INTO reminders (remind_timestamp, created_timestamp, reminder, expired, extra) VALUES (?, ?, ?, ?, ?)", 
-            (time.timestamp(), now.timestamp(), reminder, 0, util.json_encode(extra_data)))
+            (utc_time.timestamp(), now.timestamp(), reminder, 0, util.json_encode(extra_data)))
         await bot.database.commit()
-        await ctx.send(f"Reminder scheduled for {util.format_time(time)} ({util.format_timedelta(now, time)}).")
+        await ctx.send(f"Reminder scheduled for {util.format_time(local_time)} ({util.format_timedelta(now, utc_time)}).")
 
     async def send_to_channel(info, text):
         channel = bot.get_channel(info["channel_id"])
@@ -81,10 +83,13 @@ def setup(bot):
                 rid, remind_timestamp, created_timestamp, reminder_text, _, extra = row
                 try:
                     remind_timestamp = datetime.utcfromtimestamp(remind_timestamp)
-                    created_timestamp = datetime.utcfromtimestamp(created_timestamp)
+                    created_timestamp = datetime.utcfromtimestamp(created_timestamp).replace(tzinfo=timezone.utc)
                     extra = json.loads(extra)
                     uid = extra["author_id"]
-                    text = f"<@{uid}> Reminder queued at {util.format_time(created_timestamp)}: {reminder_text}"
+                    tz = await util.get_user_timezone(util.AltCtx(util.IDWrapper(uid), util.IDWrapper(None), bot))
+                    print(created_timestamp, tz, created_timestamp.astimezone(tz))
+                    created_time = util.format_time(created_timestamp.astimezone(tz))
+                    text = f"<@{uid}> Reminder queued at {created_time}: {reminder_text}"
 
                     for method_name, func in remind_send_methods:
                         print("trying", method_name, rid)
@@ -96,7 +101,7 @@ def setup(bot):
                         except Exception as e: logging.warning("Failed to send %d to %s", rid, method_name, exc_info=e)
                 except Exception as e:
                     logging.warning("Could not send reminder %d", rid, exc_info=e)
-                    to_expire.append((2, rid)) # 2 = errored
+                    #to_expire.append((2, rid)) # 2 = errored
         for expiry_type, expiry_id in to_expire:
             logging.info("Expiring reminder %d", expiry_id)
             await bot.database.execute("UPDATE reminders SET expired = ? WHERE id = ?", (expiry_type, expiry_id))

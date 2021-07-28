@@ -13,6 +13,8 @@ from discord.ext import commands
 import hashlib
 import time
 import math
+import pytz
+import collections
 
 config = {}
 
@@ -101,22 +103,22 @@ def parse_short_timedelta(text):
     return datetime.datetime.now(tz=datetime.timezone.utc) + relativedelta(**data)
 
 cal = parsedatetime.Calendar()
-def parse_humantime(text):
-    dt_tuple = cal.nlp(text)
-    if dt_tuple: return dt_tuple[0][0].replace(tzinfo=datetime.timezone.utc)
+def parse_humantime(text, tz):
+    dt_tuple = cal.parseDT(text, tzinfo=tz)
+    if dt_tuple: return dt_tuple[0]
     else: raise ValueError("parse failed")
 
-def parse_time(text):
-    try: return datetime.datetime.strptime(text, "%d/%m/%Y").replace(tzinfo=datetime.timezone.utc)
+def parse_time(text, tz):
+    try: return datetime.datetime.strptime(text, "%Y-%m-%d")
     except: pass
     try: return parse_short_timedelta(text)
     except: pass
-    try: return parse_humantime(text)
+    try: return parse_humantime(text, tz)
     except: pass
     raise ValueError("time matches no available format")
 
 def format_time(dt):
-    return dt.strftime("%H:%M:%S %d/%m/%Y")
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
 
 timeparts = (
     ("y", "years"),
@@ -266,6 +268,32 @@ async def get_asset(bot: commands.Bot, identifier):
 
 def hashbow(thing):
     return int.from_bytes(hashlib.blake2b(thing.encode("utf-8")).digest()[:3], "little")
+
+IDWrapper = collections.namedtuple("IDWrapper", ["id"])
+AltCtx = collections.namedtuple("AltCtx", ["author", "guild", "bot"])
+
+async def user_config_lookup(ctx, cfg):
+    userdata = ctx.bot.get_cog("Userdata")
+    if userdata is None: return
+    row = await userdata.get_userdata(ctx.author.id, ctx.guild.id, cfg)
+    if row is None: return
+    return row["value"]
+
+async def get_user_timezone(ctx):
+    tzname = await user_config_lookup(ctx, "tz")
+    if tzname:
+        try:
+            return pytz.timezone(tzname)
+        except pytz.UnknownTimeZoneError:
+            raise commands.UserInputError(f"Invalid time zone {tzname}")
+    else:
+        return pytz.utc
+def in_timezone(dt, tz):
+    # we already have an aware datetime, so return that and localized version
+    if dt.tzinfo is not None: return dt, dt.astimezone(tz)
+    else:
+        aware = tz.localize(dt)
+        return aware, aware.astimezone(pytz.utc)
 
 extensions = (
     "reminders",
