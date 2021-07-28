@@ -250,7 +250,7 @@ def gen_codeblock(content):
 def json_encode(x): return json.dumps(x, separators=(',', ':'))
 
 async def server_mod_check(ctx):
-    return ctx.author.permissions_in(ctx.channel).manage_channels or (await ctx.bot.is_owner(ctx.author))
+    return ctx.author.permissions_in(ctx.channel).manage_channels or (await extpriv_check(ctx))
 
 async def admin_check(ctx):
     return await ctx.bot.is_owner(ctx.author)

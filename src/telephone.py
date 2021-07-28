@@ -163,7 +163,7 @@ When you want to end a call, use hangup.
         pass
 
     @telephone.command(brief="Generate a webhook")
-    @commands.check(util.admin_check)
+    @commands.check(util.server_mod_check)
     async def init_webhook(self, ctx):
         webhook = (await ctx.channel.create_webhook(name="ABR webhook", reason=f"requested by {ctx.author.name}")).url
         await self.bot.database.execute("INSERT OR REPLACE INTO discord_webhooks VALUES (?, ?)", (ctx.channel.id, webhook))
