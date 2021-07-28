@@ -4,6 +4,7 @@ import dataclasses
 import typing
 import collections
 import logging
+import discord
 
 import util
 
@@ -25,6 +26,7 @@ class Message:
     message: list[typing.Union[str, dict]]
     source: (str, any)
     id: int
+    attachments: list[discord.Attachment]
 
 evbus_messages = prometheus_client.Counter("abr_evbus_messages", "Messages processed by event bus", ["source_type"])
 evbus_messages_dropped = prometheus_client.Counter("abr_evbus_messages_dropped", "Messages received by event bus but dropped by rate limits", ["source_type"])

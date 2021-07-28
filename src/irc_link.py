@@ -51,7 +51,7 @@ async def initialize():
         conn.nick(scramble(conn.get_nickname()))
 
     def pubmsg(conn, event):
-        msg = eventbus.Message(eventbus.AuthorInfo(event.source.nick, str(event.source), None), [" ".join(event.arguments)], (util.config["irc"]["name"], event.target), util.random_id())
+        msg = eventbus.Message(eventbus.AuthorInfo(event.source.nick, str(event.source), None), [" ".join(event.arguments)], (util.config["irc"]["name"], event.target), util.random_id(), [])
         asyncio.create_task(eventbus.push(msg))
 
     async def on_bridge_message(channel_name, msg):
@@ -60,6 +60,8 @@ async def initialize():
             # ping fix - zero width space embedded in messages
             line = f"<{random_color(msg.author.id)}{msg.author.name[0]}\u200B{msg.author.name[1:]}{color_code('')}> " + render_formatting(msg.message)[:400]
             conn.privmsg(channel_name, line)
+            for at in msg.attachments:
+                conn.privmsg(channel_name, f"-> {at.filename}: {at.proxy_url}")
         else:
             logging.warning("IRC channel %s not allowed", channel_name)
 

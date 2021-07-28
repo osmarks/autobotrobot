@@ -87,29 +87,34 @@ class Telephone(commands.Cog):
             self.webhooks[row["channel_id"]] = row["webhook"]
         logging.info("Loaded %d webhooks", len(rows))
 
-    async def on_bridge_message(self, channel_id, msg):
+    async def on_bridge_message(self, channel_id, msg: eventbus.Message):
         channel = self.bot.get_channel(channel_id)
         if channel:
             webhook = self.webhooks.get(channel_id)
-            if webhook:
-                try:
-                    self.webhook_queue.put_nowait((webhook, render_formatting(channel, msg.message)[:2000], msg.author.name, msg.author.avatar_url))
-                except asyncio.QueueFull:
-                    text = f"<{msg.author.name}> {render_formatting(channel, msg.message)}"
+            attachments_text = "\n".join(f"{at.filename}: {at.proxy_url}" for at in msg.attachments)
+            async def send_raw(text):
+                if webhook:
+                    try:
+                        self.webhook_queue.put_nowait((webhook, text, msg.author.name, msg.author.avatar_url))
+                    except asyncio.QueueFull:
+                        text = f"<{msg.author.name}> {text}"
+                        await channel.send(text[:2000], allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False))
+                else:
+                    text = f"<{msg.author.name}> {text}"
                     await channel.send(text[:2000], allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False))
-            else:
-                text = f"<{msg.author.name}> {render_formatting(channel, msg.message)}"
-                await channel.send(text[:2000], allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False))
+            await send_raw(render_formatting(channel, msg.message)[:2000])
+            if attachments_text: await send_raw(attachments_text)
         else:
             logging.warning("Channel %d not found", channel_id)
 
     @commands.Cog.listener("on_message")
     async def send_to_bridge(self, msg):
         # discard webhooks and bridge messages (hackily, admittedly, not sure how else to do this)
-        if msg.content == "": return
+        if msg.content == "" and len(msg.attachments) == 0: return
         if (msg.author == self.bot.user and msg.content[0] == "<") or msg.author.discriminator == "0000": return
         channel_id = msg.channel.id
-        msg = eventbus.Message(eventbus.AuthorInfo(msg.author.name, msg.author.id, str(msg.author.avatar_url), msg.author.bot), parse_formatting(self.bot, msg.content), ("discord", channel_id), msg.id)
+        msg = eventbus.Message(eventbus.AuthorInfo(msg.author.name, msg.author.id, str(msg.author.avatar_url), msg.author.bot), 
+            parse_formatting(self.bot, msg.content), ("discord", channel_id), msg.id, [ at for at in msg.attachments if not at.is_spoiler() ])
         await eventbus.push(msg)
 
     def cog_unload(self):
@@ -136,7 +141,7 @@ When you want to end a call, use hangup.
     @telephone.command(brief="Link to other channels", help="""Connect to another channel on Discord or any supported bridges.
     Virtual channels also exist.
     """)
-    @commands.check(util.admin_check)
+    @commands.check(util.extpriv_check)
     async def link(self, ctx, target_type, target_id, bidirectional: bool = True):
         target_id = util.extract_codeblock(target_id)
         try:
@@ -147,7 +152,7 @@ When you want to end a call, use hangup.
         pass
 
     @telephone.command(brief="Undo link commands.")
-    @commands.check(util.admin_check)
+    @commands.check(util.extpriv_check)
     async def unlink(self, ctx, target_type, target_id, bidirectional: bool = True):
         target_id = util.extract_codeblock(target_id)
         try:

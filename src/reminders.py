@@ -86,7 +86,7 @@ def setup(bot):
                     created_timestamp = datetime.utcfromtimestamp(created_timestamp).replace(tzinfo=timezone.utc)
                     extra = json.loads(extra)
                     uid = extra["author_id"]
-                    tz = await util.get_user_timezone(util.AltCtx(util.IDWrapper(uid), util.IDWrapper(None), bot))
+                    tz = await util.get_user_timezone(util.AltCtx(util.IDWrapper(uid), util.IDWrapper(extra.get("guild_id")), bot))
                     print(created_timestamp, tz, created_timestamp.astimezone(tz))
                     created_time = util.format_time(created_timestamp.astimezone(tz))
                     text = f"<@{uid}> Reminder queued at {created_time}: {reminder_text}"

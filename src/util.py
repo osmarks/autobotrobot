@@ -255,6 +255,9 @@ async def server_mod_check(ctx):
 async def admin_check(ctx):
     return await ctx.bot.is_owner(ctx.author)
 
+async def extpriv_check(ctx):
+    return await ctx.bot.is_owner(ctx.author) or ctx.author.id in config["extpriv_users"]
+
 async def get_asset(bot: commands.Bot, identifier):
     safe_ident = re.sub("[^A-Za-z0-9_.-]", "_", identifier)
     x = await bot.database.execute_fetchone("SELECT * FROM assets WHERE identifier = ?", (safe_ident,))
