@@ -76,7 +76,10 @@ class Telephone(commands.Cog):
         while True:
             webhook, content, username, avatar_url = await self.webhook_queue.get()
             wh_obj = discord.Webhook.from_url(webhook, adapter=discord.AsyncWebhookAdapter(self.bot.http._HTTPClient__session))
-            await wh_obj.send(content=content, username=username, avatar_url=avatar_url, allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False))
+            try:
+                await wh_obj.send(content=content, username=username, avatar_url=avatar_url, allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False))
+            except:
+                logging.exception("Webhook send on %s failed")
 
     async def initial_load_webhooks(self):
         rows = await self.bot.database.execute_fetchall("SELECT * FROM discord_webhooks")

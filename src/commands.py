@@ -35,7 +35,7 @@ class GeneralCommands(commands.Cog):
 
     @commands.command(help="Deletes the specified target.", rest_is_raw=True)
     async def delete(self, ctx, *, raw_target):
-        target = await clean(self, ctx, raw_target.strip().replace("\n", " "))
+        target = await clean(ctx, raw_target.strip().replace("\n", " "))
         if len(target) > 256:
             await ctx.send(embed=util.error_embed("Deletion target must be max 256 chars"))
             return
@@ -150,10 +150,10 @@ AutoBotRobot is operated by gollark/osmarks.
             for _ in range(lthing.count(negation)): weight = 1 / weight
         return weight
 
-    rng = default_rng()
 
     @commands.command(help="'Randomly' choose between the specified options.", name="choice", aliases=["choose"])
     async def random_choice(self, ctx, *choices):
+        rng = default_rng()
         choices = list(choices)
         samples = 1
         # apparently doing typing.Optional[int] doesn't work properly with this, so just bodge around it
