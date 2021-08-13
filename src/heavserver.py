@@ -8,7 +8,7 @@ import metrics
 def setup(bot):
 	@bot.listen()
 	async def on_member_join(member):
-		if member.guild.id == util.config["heavserver"]["id"]:
+		if member.guild and member.guild.id == util.config["heavserver"]["id"]:
 			logging.info("%s (%d) joined heavserver", member.display_name, member.id)
 			if member.bot:
 				await member.add_roles(discord.utils.get(member.guild.roles, id=util.config["heavserver"]["quarantine_role"]))
