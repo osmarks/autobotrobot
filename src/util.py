@@ -278,7 +278,7 @@ AltCtx = collections.namedtuple("AltCtx", ["author", "guild", "bot"])
 async def user_config_lookup(ctx, cfg):
     userdata = ctx.bot.get_cog("Userdata")
     if userdata is None: return
-    row = await userdata.get_userdata(ctx.author.id, ctx.guild.id, cfg)
+    row = await userdata.get_userdata(ctx.author.id, ctx.guild and ctx.guild.id, cfg)
     if row is None: return
     return row["value"]
 
