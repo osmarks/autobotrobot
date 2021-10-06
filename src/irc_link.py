@@ -29,6 +29,8 @@ def render_formatting(message):
                 out += f"@{random_color(seg['id'])}{seg['name']}{color_code('')}"
             elif kind == "channel_mention": # these appear to be clickable across servers/guilds
                 out += f"#{seg['name']}"
+            elif kind == "role_mention":
+                out += f"@{random_color(seg['id'])}{seg['name']}{color_code('')}"
             else: logging.warn("Unrecognized message seg %s", kind)
     return out.strip()
 
