@@ -58,18 +58,13 @@ async def initialize():
 
     async def on_bridge_message(channel_name, msg):
         if channel_name in util.config["irc"]["channels"]:
-        
             if channel_name not in joined: conn.join(channel_name)
-            
             # if its a reply
             if msg.replyee:
-                conn.privmessage (channel_name, f"Replying to @{random_color(msg.replyee.id)}{msg.replyee.name}{color_code('')}:")
-            
+                conn.privmessage(channel_name, f"Replying to @{random_color(msg.replyee.id)}{msg.replyee.name}{color_code('')}:")
             # ping fix - zero width space embedded in messages
             line = f"<{random_color(msg.author.id)}{msg.author.name[0]}\u200B{msg.author.name[1:]}{color_code('')}> " + render_formatting(msg.message)[:400]
-            
             conn.privmsg(channel_name, line)
-            
             for at in msg.attachments:
                 conn.privmsg(channel_name, f"-> {at.filename}: {at.proxy_url}")
         
