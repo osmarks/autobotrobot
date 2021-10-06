@@ -24,7 +24,7 @@ def render_formatting(message):
             out += seg.replace("\n", " ")
         else:
             kind = seg["type"]
-            #  TODO: check if user exists on both ends, and possibly drop if so
+            # TODO: check if user exists on both ends, and possibly drop if so
             if kind == "user_mention":
                 out += f"@{random_color(seg['id'])}{seg['name']}{color_code('')}"
             elif kind == "channel_mention": # these appear to be clickable across servers/guilds
@@ -60,9 +60,9 @@ async def initialize():
         if channel_name in util.config["irc"]["channels"]:
             if channel_name not in joined: conn.join(channel_name)
             # if its a reply
-            try:
-                if msg.reference:
-                    conn.privmessage (channel_name, f"Replying to @{random_color(msg.reference.cached_message.author.id)}{msg.reference.cached_message.author.name}{color_code('')}:")
+            dmsg = discord.fetch_message(msg.id)
+            if dmsg.reference.message_id:
+                conn.privmessage(channel_name, f"Replying to @{random_color(dmsg.reference.cached_message.author.id)}{dmsg.reference.cached_message.author.name}{color_code('')}:")
             # ping fix - zero width space embedded in messages
             line = f"<{random_color(msg.author.id)}{msg.author.name[0]}\u200B{msg.author.name[1:]}{color_code('')}> " + render_formatting(msg.message)[:400]
             conn.privmsg(channel_name, line)
