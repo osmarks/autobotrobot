@@ -26,12 +26,13 @@ class Message:
     message: list[typing.Union[str, dict]]
     source: (str, any)
     id: int
+    replyee: AuthorInfo
     attachments: list[discord.Attachment]
 
 evbus_messages = prometheus_client.Counter("abr_evbus_messages", "Messages processed by event bus", ["source_type"])
 evbus_messages_dropped = prometheus_client.Counter("abr_evbus_messages_dropped", "Messages received by event bus but dropped by rate limits", ["source_type"])
 
-# maps each bridge destination type (discord/APIONET/etc) to the listeners for it.
+# maps each bridge destination type (discord/APIONET/etc) to the listeners for it
 listeners = collections.defaultdict(set)
 
 # maintains a list of all the unidirectional links between channels - key is source, values are targets
