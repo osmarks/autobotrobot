@@ -26,7 +26,7 @@ class Userdata(commands.Cog):
 
     @userdata.command(help="Get a userdata key. Checks guild first, then global.")
     async def get(self, ctx, *, key):
-        row = await self.get_userdata(ctx.author.id, ctx.guild.id, key)
+        row = await self.get_userdata(ctx.author.id, ctx.guild and ctx.guild.id, key)
         if not row:
             raise ValueError("No such key")
         await ctx.send(row["value"])
@@ -37,7 +37,7 @@ class Userdata(commands.Cog):
         if scope == "global":
             rows = await self.bot.database.execute_fetchall("SELECT * FROM user_data WHERE user_id = ? AND guild_id = '_global' AND key LIKE ?", (ctx.author.id, query))
         else:
-            rows = await self.bot.database.execute_fetchall("SELECT * FROM user_data WHERE user_id = ? AND guild_id = ? AND key LIKE ?", (ctx.author.id, ctx.guild.id, query))
+            rows = await self.bot.database.execute_fetchall("SELECT * FROM user_data WHERE user_id = ? AND guild_id = ? AND key LIKE ?", (ctx.author.id, ctx.guild and ctx.guild.id, query))
         out = []
         for row in rows:
             if show_values:
@@ -51,7 +51,7 @@ class Userdata(commands.Cog):
     async def set_cmd(self, ctx, key, *, value):
         check_key(key)
         value = preprocess_value(value)
-        await self.set_userdata(ctx.author.id, ctx.guild.id, key, value)
+        await self.set_userdata(ctx.author.id, ctx.guild and ctx.guild.id, key, value)
         await ctx.send(f"**{key}** set (scope guild)")
 
     @userdata.command(help="Set a userdata key in the global scope.")
@@ -68,7 +68,7 @@ class Userdata(commands.Cog):
         row = await self.get_userdata(ctx.author.id, ctx.guild.id, key)
         if not row:
             value = 0
-            guild = ctx.guild.id
+            guild = ctx.guild and ctx.guild.id
         else:
             value = int(row["value"])
             guild = row["guild_id"]
@@ -80,7 +80,7 @@ class Userdata(commands.Cog):
     async def delete(self, ctx, *keys):
         "Delete the specified keys (smallest scope first)."
         for key in keys:
-            row = await self.get_userdata(ctx.author.id, ctx.guild.id, key)
+            row = await self.get_userdata(ctx.author.id, ctx.guild and ctx.guild.id, key)
             if not row:
                 return await ctx.send(embed=util.error_embed(f"No such key {key}"))
             await self.bot.database.execute("DELETE FROM user_data WHERE user_id = ? AND guild_id = ? AND key = ?", (ctx.author.id, row["guild_id"], key))

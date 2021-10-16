@@ -77,9 +77,14 @@ async def initialize():
             logging.info("Connected to %s on IRC", channel)
             joined.add(channel)
 
+    def disconnect(conn, event):
+        logging.warn("Disconnected from IRC, reinitializing")
+        teardown()
+        asyncio.create_task(initialize)
+
     # TODO: do better thing
     conn.add_global_handler("welcome", connect)
-    conn.add_global_handler("disconnect", lambda conn, event: logging.warn("Disconnected from IRC"))
+    conn.add_global_handler("disconnect", disconnect)
     conn.add_global_handler("nicknameinuse", inuse)
     conn.add_global_handler("pubmsg", pubmsg)
 
