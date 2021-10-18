@@ -63,8 +63,9 @@ async def initialize():
             if msg.replyee:
                 conn.privmessage(channel_name, f"Replying to @{random_color(msg.replyee.id)}{msg.replyee.name}{color_code('')}:")
             # ping fix - zero width space embedded in messages
-            line = f"<{random_color(msg.author.id)}{msg.author.name[0]}\u200B{msg.author.name[1:]}{color_code('')}> " + render_formatting(msg.message)[:400]
-            conn.privmsg(channel_name, line)
+            line = f"<{random_color(msg.author.id)}{msg.author.name[0]}\u200B{msg.author.name[1:]}{color_code('')}> " + render_formatting(msg.message)
+            for i in range(0, len(line), 510):
+                conn.privmsg(channel_name, line[i:i+510])
             for at in msg.attachments:
                 conn.privmsg(channel_name, f"-> {at.filename}: {at.proxy_url}")
         
