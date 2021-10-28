@@ -113,8 +113,12 @@ class Telephone(commands.Cog):
         if msg.content == "" and len(msg.attachments) == 0: return
         if (msg.author == self.bot.user and msg.content[0] == "<") or msg.author.discriminator == "0000": return
         channel_id = msg.channel.id
+        reply = None
+        if msg.reference and msg.reference.cached_message:
+            replying_to = msg.reference.cached_message
+            reply = (eventbus.AuthorInfo(replying_to.author.name, replying_to.author.id, str(replying_to.author.avatar_url), replying_to.author.bot), parse_formatting(self.bot, replying_to.content))
         msg = eventbus.Message(eventbus.AuthorInfo(msg.author.name, msg.author.id, str(msg.author.avatar_url), msg.author.bot), 
-            parse_formatting(self.bot, msg.content), ("discord", channel_id), msg.id, [ at for at in msg.attachments if not at.is_spoiler() ])
+            parse_formatting(self.bot, msg.content), ("discord", channel_id), msg.id, [ at for at in msg.attachments if not at.is_spoiler() ], reply=reply)
         await eventbus.push(msg)
 
     def cog_unload(self):

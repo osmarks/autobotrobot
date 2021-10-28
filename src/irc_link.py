@@ -54,14 +54,39 @@ async def initialize():
         msg = eventbus.Message(eventbus.AuthorInfo(event.source.nick, str(event.source), None), [" ".join(event.arguments)], (util.config["irc"]["name"], event.target), util.random_id(), [])
         asyncio.create_task(eventbus.push(msg))
 
+    def bytewise_truncate(x, max):
+        x = x[:max]
+        while True:
+            try:
+                return x, x.decode("utf-8")
+            except UnicodeDecodeError:
+                x = x[:-1]
+
+    def render_line(author, content):
+        # colorize for aesthetics
+        # add ZWS to prevent pinging
+        return f"<{random_color(author.id)}{author.name[0]}\u200B{author.name[1:]}{color_code('')}> {content}"
+
     async def on_bridge_message(channel_name, msg):
         if channel_name in util.config["irc"]["channels"]:
             if channel_name not in joined: conn.join(channel_name)
-            # ping fix - zero width space embedded in messages
-            line = f"<{random_color(msg.author.id)}{msg.author.name[0]}\u200B{msg.author.name[1:]}{color_code('')}> " + render_formatting(msg.message)[:400]
-            conn.privmsg(channel_name, line)
+            if msg.reply:
+                reply_line = render_line(msg.reply[0], render_formatting(msg.reply[1])).encode("utf-8")
+                reply_line_new, reply_line_u = bytewise_truncate(reply_line, 300)
+                if reply_line_new != reply_line:
+                    reply_line_u += " ..."
+                conn.privmsg(channel_name, f"[Replying to {reply_line_u}]")
+            lines = []
+            content = render_formatting(msg.message).encode("utf-8")
+            # somewhat accursedly break string into valid UTF-8 substrings with <=400 bytes
+            while content:
+                next_line, next_line_u = bytewise_truncate(content, 400)
+                lines.append(next_line_u)
+                content = content[len(next_line):]
+            for line in lines:
+                conn.privmsg(channel_name, render_line(msg.author, line))
             for at in msg.attachments:
-                conn.privmsg(channel_name, f"-> {at.filename}: {at.proxy_url}")
+                conn.privmsg(channel_name, render_line(msg.author, f"-> {at.filename}: {at.proxy_url}"))
         else:
             logging.warning("IRC channel %s not allowed", channel_name)
 
