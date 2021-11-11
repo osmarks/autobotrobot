@@ -76,7 +76,7 @@ def setup(bot):
 
     @tasks.loop(seconds=60)
     async def remind_worker():
-        csr = bot.database.execute("SELECT * FROM reminders WHERE expired = 0 AND remind_timestamp < ?", (util.timestamp(),))
+        csr = bot.database.execute("SELECT * FROM reminders WHERE expired = 0 AND remind_timestamp < ?", (util.timestamp()+30,))
         to_expire = []
         async with csr as cursor:
             async for row in cursor:
