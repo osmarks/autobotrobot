@@ -111,7 +111,7 @@ if __name__ == "__main__":
     try:
         loop.run_forever()
     except KeyboardInterrupt:
-        loop.run_until_complete(bot.logout())
+        loop.run_until_complete(bot.close())
         sys.exit(0)
     finally:
         loop.close()
