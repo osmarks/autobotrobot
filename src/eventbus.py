@@ -27,6 +27,7 @@ class Message:
     source: (str, any)
     id: int
     attachments: list[discord.Attachment]
+    action: bool = False
     reply: (AuthorInfo, str) = None
 
 evbus_messages = prometheus_client.Counter("abr_evbus_messages", "Messages processed by event bus", ["source_type"])
