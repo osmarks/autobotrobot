@@ -71,11 +71,14 @@ async def initialize():
         if channel_name in util.config["irc"]["channels"]:
             if channel_name not in joined: conn.join(channel_name)
             if msg.reply:
-                reply_line = render_line(msg.reply[0], render_formatting(msg.reply[1])).encode("utf-8")
-                reply_line_new, reply_line_u = bytewise_truncate(reply_line, 300)
-                if reply_line_new != reply_line:
-                    reply_line_u += " ..."
-                conn.privmsg(channel_name, f"[Replying to {reply_line_u}]")
+                if msg.reply[0] and msg.reply[1]:
+                    reply_line = render_line(msg.reply[0], render_formatting(msg.reply[1])).encode("utf-8")
+                    reply_line_new, reply_line_u = bytewise_truncate(reply_line, 300)
+                    if reply_line_new != reply_line:
+                        reply_line_u += " ..."
+                    conn.privmsg(channel_name, f"[Replying to {reply_line_u}]")
+                else:
+                    conn.privmsg(channel_name, "[Replying to an unknown message]")
             lines = []
             content = render_formatting(msg.message).encode("utf-8")
             # somewhat accursedly break string into valid UTF-8 substrings with <=400 bytes
