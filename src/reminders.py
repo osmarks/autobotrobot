@@ -48,7 +48,7 @@ class Reminders(commands.Cog):
 
     @commands.command(brief="Set a reminder to be reminded about later.", rest_is_raw=True, help="""Sets a reminder which you will (probably) be reminded about at/after the specified time.
     All times are UTC unless overridden.
-    Thanks to new coding and algorithms, reminders are now not done at minute granularity. However, do not expect sub-5s granularity due to miscellaneous latency we have not optimized away.
+    Thanks to new coding and algorithms, reminders are now not done at minute granularity. However, do not expect sub-5s granularity due to miscellaneous latency which has not been a significant target of optimization.
     Note that due to technical limitations reminders beyond the year 10000 CE or in the past cannot currently be handled.
     Note that reminder delivery is not guaranteed, due to possible issues including but not limited to: data loss, me eventually not caring, the failure of Discord (in this case message delivery will still be attempted manually on a case-by-case basis), the collapse of human civilization, or other existential risks.""")
     async def remind(self, ctx, time, *, reminder):
@@ -79,7 +79,7 @@ class Reminders(commands.Cog):
 
     def insert_reminder(self, id, time):
         pos = bisect_left(self.reminder_queue, time, key=lambda x: x[0])
-        self.reminder_queue.insert(0, (time, id))
+        self.reminder_queue.insert(pos, (time, id))
         if pos == 0:
             self.reminder_event.set()
 
@@ -148,11 +148,18 @@ class Reminders(commands.Cog):
         await self.bot.database.commit()
 
     async def init_reminders(self):
-        reminders = await self.bot.database.execute_fetchall("SELECT * FROM reminders WHERE expired = 0 AND remind_timestamp < ?", (util.timestamp(),))
+        ts = util.timestamp()
+        # load future reminders
+        reminders = await self.bot.database.execute_fetchall("SELECT * FROM reminders WHERE expired = 0 AND remind_timestamp > ?", (ts,))
         for reminder in reminders:
             self.insert_reminder(reminder["id"], reminder["remind_timestamp"])
         logging.info("Loaded %d reminders", len(reminders))
         self.rloop_task = await self.reminder_loop()
+        # catch reminders which were not fired due to downtime or something
+        reminders = await self.bot.database.execute_fetchall("SELECT * FROM reminders WHERE expired = 0 AND remind_timestamp <= ?", (ts,))
+        logging.info("Firing %d late reminders", len(reminders))
+        for reminder in reminders:
+            await self.fire_reminder(reminder["id"])
 
     async def reminder_loop(self):
         await self.bot.wait_until_ready()

@@ -32,6 +32,10 @@ bot = commands.Bot(command_prefix=commands.when_mentioned_or(config["prefix"]), 
     case_insensitive=True, allowed_mentions=discord.AllowedMentions(everyone=False, users=True, roles=True), intents=intents)
 bot._skip_check = lambda x, y: False
 
+async def on_guild_available(guild):
+    logging.info(f"{guild.name}|{guild.id} became available")
+bot.on_guild_available = on_guild_available
+
 messages = prometheus_client.Counter("abr_messages", "Messages seen/handled by bot")
 command_invocations = prometheus_client.Counter("abr_command_invocations", "Total commands invoked (includes failed)")
 @bot.event

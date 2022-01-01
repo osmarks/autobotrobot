@@ -9,15 +9,6 @@ import util
 import io
 import concurrent.futures
 
-def pool_load_model(model):
-    from transformers import pipeline
-    qa_pipeline = pipeline("question-answering", model)
-    globals()["qa_pipeline"] = qa_pipeline
-
-def pool_operate(question, context):
-    qa_pipeline = globals()["qa_pipeline"] 
-    return qa_pipeline(question=question, context=context)
-
 class Parser(html.parser.HTMLParser):
     def __init__(self):
         self.links = []
@@ -35,10 +26,6 @@ class Search(commands.Cog):
         self.wp_cache = collections.OrderedDict()
         self.wp_search_cache = collections.OrderedDict()
         self.pool = None
-
-    def ensure_pool(self):
-        if self.pool is not None: return
-        self.pool = concurrent.futures.ProcessPoolExecutor(max_workers=1, initializer=pool_load_model, initargs=(util.config["ir"]["model"],))
 
     @commands.command()
     async def search(self, ctx, *, query):
@@ -101,16 +88,6 @@ class Search(commands.Cog):
             f = io.BytesIO(content.encode("utf-8"))
             file = discord.File(f, "content.txt")
             await ctx.send(file=file)
-
-    @commands.command()
-    async def experimental_qa(self, ctx, page, *, query):
-        "Answer questions from the first part of a Wikipedia page, using a finetuned ALBERT model."
-        self.ensure_pool()
-        loop = asyncio.get_running_loop()
-        async with ctx.typing():
-            content = await self.wp_fetch(page)
-            result = await loop.run_in_executor(self.pool, pool_operate, query, content)
-            await ctx.send("%s (%f)" % (result["answer"].strip(), result["score"]))
 
     def cog_unload(self):
         asyncio.create_task(self.session.close())

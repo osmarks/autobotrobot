@@ -75,7 +75,7 @@ class Telephone(commands.Cog):
     async def send_webhooks(self):
         while True:
             webhook, content, username, avatar_url = await self.webhook_queue.get()
-            wh_obj = discord.Webhook.from_url(webhook, adapter=discord.AsyncWebhookAdapter(self.bot.http._HTTPClient__session))
+            wh_obj = discord.Webhook.from_url(webhook, session=self.bot.http._HTTPClient__session)
             try:
                 await wh_obj.send(content=content, username=username, avatar_url=avatar_url, allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False))
             except:
@@ -111,7 +111,7 @@ class Telephone(commands.Cog):
     async def send_to_bridge(self, msg):
         # discard webhooks and bridge messages (hackily, admittedly, not sure how else to do this)
         if msg.content == "" and len(msg.attachments) == 0: return
-        if (msg.author == self.bot.user and msg.content[0] == "<") or msg.author.discriminator == "0000": return
+        if (msg.author == self.bot.user and (len(msg.content) > 0 and msg.content[0] == "<")) or msg.author.discriminator == "0000": return
         channel_id = msg.channel.id
         reply = None
         if msg.reference:
@@ -127,10 +127,10 @@ class Telephone(commands.Cog):
                 except discord.HTTPException:
                     replying_to = None
             if replying_to:
-                reply = (eventbus.AuthorInfo(replying_to.author.name, replying_to.author.id, str(replying_to.author.avatar_url), replying_to.author.bot), parse_formatting(self.bot, replying_to.content))
+                reply = (eventbus.AuthorInfo(replying_to.author.name, replying_to.author.id, str(replying_to.author.display_avatar.url), replying_to.author.bot), parse_formatting(self.bot, replying_to.content))
             else:
                 reply = (None, None)
-        msg = eventbus.Message(eventbus.AuthorInfo(msg.author.name, msg.author.id, str(msg.author.avatar_url), msg.author.bot), 
+        msg = eventbus.Message(eventbus.AuthorInfo(msg.author.name, msg.author.id, str(msg.author.display_avatar.url), msg.author.bot), 
             parse_formatting(self.bot, msg.content), ("discord", channel_id), msg.id, [ at for at in msg.attachments if not at.is_spoiler() ], reply=reply)
         await eventbus.push(msg)
 
