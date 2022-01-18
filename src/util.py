@@ -328,3 +328,8 @@ def random_id():
     millisecond_time = int(second_time * 1000)
     randomness = random.getrandbits(SIMPLEFLAKE_RANDOM_LENGTH)
     return (millisecond_time << SIMPLEFLAKE_TIMESTAMP_SHIFT) + randomness
+
+def chunks(source, length):
+    for i in range(0, len(source), length):
+        yield source[i : i+length]
+
