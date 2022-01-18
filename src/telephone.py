@@ -169,7 +169,7 @@ When you want to end a call, use hangup.
         pass
 
     @telephone.command(brief="Undo link commands.")
-    @commands.check(util.extpriv_check)
+    @commands.check(util.server_mod_check)
     async def unlink(self, ctx, target_type, target_id, bidirectional: bool = True):
         target_id = util.extract_codeblock(target_id)
         try:
