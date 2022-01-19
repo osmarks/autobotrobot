@@ -203,7 +203,9 @@ When you want to end a call, use hangup.
         chs = []
         for dest in eventbus.find_all_destinations(('discord',ch.id)):
             if dest[0] == 'discord':
-                chs.append(self.bot.get_channel(dest[1]))
+                c = await self.bot.fetch_channel(dest[1])
+                if c is not None:
+                    chs.append(c)
 
         found = await self._find_recent(chs, query)
 
