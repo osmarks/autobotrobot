@@ -4,10 +4,12 @@ import logging
 import asyncio
 import re
 import hashlib
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import pydot
 import tempfile
+import collections
+import aiohttp
 
 import util
 import eventbus
@@ -179,6 +181,88 @@ When you want to end a call, use hangup.
         await ctx.send(f"Successfully deleted.")
         pass
 
+
+    async def _find_recent(self, chs, query):
+        one_week = timedelta(seconds=60*60*24*7)
+        one_week_ago = datetime.now()-one_week
+
+        found = collections.defaultdict(list)
+        async def find_msgs(ch):
+            # the parameters to history() here might need to be tweaked
+            # somewhat, for more general usage
+            async for msg in ch.history(limit=None,after=one_week_ago):
+                if query in msg.content.lower():
+                    found[ch].append(msg)
+        await asyncio.gather(*(find_msgs(ch) for ch in chs))
+        return found
+
+    @telephone.command(brief="find recent messages in channels linked to this")
+    @commands.check(util.extpriv_check)
+    async def searchrecent(self, ctx, ch: discord.TextChannel, *, query):
+        author = ctx.author
+        chs = []
+        for dest in eventbus.find_all_destinations(('discord',ch.id)):
+            if dest[0] == 'discord':
+                chs.append(self.bot.get_channel(dest[1]))
+
+        found = await self._find_recent(chs, query)
+
+        out = ""
+        for ch,ms in found.items():
+            out += f"{ch.mention} (`#{ch.name}` in `{ch.guild.name}`)\n"
+            for m in ms:
+                u = m.author.name if m.author else None
+                w = "[WH]" if m.webhook_id else ""
+                out += f"- {m.content[:20]} @{m.created_at} by {u} {w}\n"
+
+        for c in util.chunks(out,2000):
+            await author.send(c)
+
+        return found
+
+    @telephone.command(brief="delete recent messages in channels linked to this")
+    @commands.check(util.extpriv_check)
+    async def delrecent(self, ctx, ch: discord.TextChannel, *, query):
+        author = ctx.author
+        found = await self.searchrecent(ctx,ch,query=query)
+
+        await author.send("please say 'GO' to confirm or wait 10 seconds to not confirm")
+        try:
+            await self.bot.wait_for('message',check=lambda m:m.author == ctx.author and m.content == "GO" and m.channel == ctx.author.dm_channel,timeout=10)
+        except asyncio.TimeoutError:
+            await author.send("timed out")
+            return
+
+        async def try_delete(msg,session):
+            if msg.webhook_id is not None:
+                # note: assumes there is only one webhook we control per channel
+                # i think that's the case
+                wh_url = await self.bot.database.execute_fetchone("SELECT webhook FROM discord_webhooks WHERE channel_id = ?",(msg.channel.id,))
+                if wh_url is None:
+                    await author.send(f"no access to webhook: {msg.id} {msg.channel.mention} {msg.jump_url}")
+                    return
+                wh_url = wh_url['webhook']
+
+                wh = discord.Webhook.from_url(wh_url,session=session)
+                await wh.delete_message(msg.id)
+
+            else:
+                try:
+                    await msg.delete()
+                except discord.errors.Forbidden:
+                    await author.send(f"!!! couldn't delete msg {msg.id} in {msg.channel.mention}")
+
+        msgs = []
+        for q in found.values():
+            msgs.extend(q)
+
+        async with aiohttp.ClientSession() as session:
+            await asyncio.gather(*(try_delete(msg,session) for msg in msgs))
+
+        await author.send("done")
+
+
+
     @telephone.command(brief="Generate a webhook")
     @commands.check(util.server_mod_check)
     async def init_webhook(self, ctx):
@@ -223,7 +307,7 @@ When you want to end a call, use hangup.
         if address == originating_address: return await ctx.send(embed=util.error_embed("A channel cannot dial itself. That means *you*, Gibson."))
         recv_info = await self.get_addr_config(address)
         if not recv_info: return await ctx.send(embed=util.error_embed("Destination address not found. Please check for typos and/or antimemes."))
-        
+
         current_call = await self.bot.database.execute_fetchone("SELECT * FROM calls WHERE from_id = ?", (originating_address,))
         if current_call: return await ctx.send(embed=util.error_embed(f"A call is already open (to {current_call['to_id']}) from this channel. Currently, only one outgoing call is permitted at a time."))
 
