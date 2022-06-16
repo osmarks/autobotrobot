@@ -182,33 +182,29 @@ When you want to end a call, use hangup.
         pass
 
 
-    async def _find_recent(self, chs, query):
+    async def find_recent(self, chs, query):
         one_week = timedelta(seconds=60*60*24*7)
-        one_week_ago = datetime.now()-one_week
+        one_week_ago = datetime.now() - one_week
 
-        found = collections.defaultdict(list)
-        async def find_msgs(ch):
-            # the parameters to history() here might need to be tweaked
-            # somewhat, for more general usage
+        for ch in chs:
+            yield True, ch
             async for msg in ch.history(limit=None,after=one_week_ago):
                 if query in msg.content.lower():
-                    found[ch].append(msg)
-        await asyncio.gather(*(find_msgs(ch) for ch in chs))
-        return found
+                    yield False, ch, msg
 
-    @telephone.command(brief="find recent messages in channels linked to this")
+    @telephone.command(brief="Find recent messages in channels linked to this")
     @commands.check(util.extpriv_check)
     async def searchrecent(self, ctx, ch: discord.TextChannel, *, query):
         author = ctx.author
         chs = []
-        for dest in eventbus.find_all_destinations(('discord',ch.id)):
-            if dest[0] == 'discord':
+        for dest in eventbus.find_all_destinations(("discord",ch.id)):
+            if dest[0] == "discord":
                 chs.append(self.bot.get_channel(dest[1]))
 
-        found = await self._find_recent(chs, query)
+        found = await self.find_recent(chs, query)
 
         out = ""
-        for ch,ms in found.items():
+        async for ch,ms in found.items():
             out += f"{ch.mention} (`#{ch.name}` in `{ch.guild.name}`)\n"
             for m in ms:
                 u = m.author.name if m.author else None
@@ -220,7 +216,7 @@ When you want to end a call, use hangup.
 
         return found
 
-    @telephone.command(brief="delete recent messages in channels linked to this")
+    @telephone.command(brief="Delete recent messages in channels linked to this")
     @commands.check(util.extpriv_check)
     async def delrecent(self, ctx, ch: discord.TextChannel, *, query):
         author = ctx.author
@@ -260,7 +256,6 @@ When you want to end a call, use hangup.
             await asyncio.gather(*(try_delete(msg,session) for msg in msgs))
 
         await author.send("done")
-
 
 
     @telephone.command(brief="Generate a webhook")

@@ -50,7 +50,8 @@ time_units = (
     # Wikipedia tells me this is a traditional Chinese timekeeping unit
     ("ke",),
     ("minutes", "m"),
-    ("seconds", "s")
+    ("seconds", "s"),
+    ("helloboiseconds", "hbseconds", "hbs")
 )
 
 tu_mappings = {
@@ -60,7 +61,8 @@ tu_mappings = {
     "beelifespans": lambda: (random.randint(122, 152), "days"),
     "semesters": (18, "weeks"),
     "fortnights": (2, "weeks"),
-    "ke": (864, "seconds")
+    "ke": (864, "seconds"),
+    "helloboiseconds": (1800, "seconds")
 }
 
 fractional_tu_mappings = {
