@@ -126,7 +126,7 @@ class Telephone(commands.Cog):
             else:
                 try:
                     replying_to = await self.bot.get_guild(msg.reference.guild_id).get_channel(msg.reference.channel_id).fetch_message(msg.reference.message_id)
-                except discord.HTTPException:
+                except (discord.HTTPException, AttributeError):
                     replying_to = None
             if replying_to:
                 reply = (eventbus.AuthorInfo(replying_to.author.name, replying_to.author.id, str(replying_to.author.display_avatar.url), replying_to.author.bot), parse_formatting(self.bot, replying_to.content))

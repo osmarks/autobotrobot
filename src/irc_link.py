@@ -102,7 +102,7 @@ async def initialize():
     def disconnect(conn, event):
         logging.warn("Disconnected from IRC, reinitializing")
         teardown()
-        asyncio.create_task(initialize())
+        if not conn.planned_disconnection: asyncio.create_task(initialize())
 
     # TODO: do better thing
     conn.add_global_handler("welcome", connect)
@@ -117,5 +117,7 @@ def setup(bot):
     asyncio.create_task(initialize())
 
 def teardown(bot=None):
-    if global_conn: global_conn.disconnect()
+    if global_conn:
+        global_conn.planned_disconnection = True
+        global_conn.disconnect()
     if unlisten: unlisten()
