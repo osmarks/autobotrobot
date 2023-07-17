@@ -94,6 +94,6 @@ class Search(commands.Cog):
         if self.pool is not None:
             self.pool.shutdown()
 
-def setup(bot):
+async def setup(bot):
     cog = Search(bot)
-    bot.add_cog(cog)
+    await bot.add_cog(cog)

@@ -47,7 +47,7 @@ async def achieve(bot: commands.Bot, message: discord.Message, achievement):
     await bot.database.commit()
     logging.info("Awarded achievement %s to %s", achievement, message.author.name)
 
-def setup(bot):
+async def setup(bot):
     @bot.group(name="achievements", aliases=["ach", "achieve", "achievement"], brief="Achieve a wide variety of fun achievements!", help=f"""
     Do things and get arbitrary achievements for them!
     Note that due to reasons messages for achievements will not be shown except in opted-in servers, although achievements will be gained regardless.

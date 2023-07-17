@@ -27,6 +27,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(asctime)s %(mess
 
 intents = discord.Intents.default()
 intents.members = True
+intents.message_content = True
 
 bot = commands.Bot(command_prefix=commands.when_mentioned_or(config["prefix"]), description="AutoBotRobot, the most useless bot in the known universe." + util.config.get("description_suffix", ""), 
     case_insensitive=True, allowed_mentions=discord.AllowedMentions(everyone=False, users=True, roles=True), intents=intents)
@@ -103,10 +104,11 @@ guild_count.set_function(get_guild_count)
 async def run_bot():
     bot.database = await db.init(config["database"])
     await eventbus.initial_load(bot.database)
-    for ext in util.extensions:
-        logging.info("Loaded %s", ext)
-        bot.load_extension(ext)
-    await bot.start(config["token"])
+    async with bot:
+        for ext in util.extensions:
+            logging.info("Loaded %s", ext)
+            await bot.load_extension(ext)
+        await bot.start(config["token"])
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()

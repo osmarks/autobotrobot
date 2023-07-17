@@ -93,7 +93,7 @@ class Telephone(commands.Cog):
         channel = self.bot.get_channel(channel_id)
         if channel:
             webhook = self.webhooks.get(channel_id)
-            attachments_text = "\n".join(f"{at.filename}: {at.proxy_url}" for at in msg.attachments)
+            attachments_text = "\n".join(f"{at.filename}: {at.url}" for at in msg.attachments)
             async def send_raw(text):
                 if webhook:
                     try:
@@ -132,7 +132,7 @@ class Telephone(commands.Cog):
                 reply = (eventbus.AuthorInfo(replying_to.author.name, replying_to.author.id, str(replying_to.author.display_avatar.url), replying_to.author.bot), parse_formatting(self.bot, replying_to.content))
             else:
                 reply = (None, None)
-        msg = eventbus.Message(eventbus.AuthorInfo(msg.author.name, msg.author.id, str(msg.author.display_avatar.url), msg.author.bot), 
+        msg = eventbus.Message(eventbus.AuthorInfo(msg.author.global_name or msg.author.name, msg.author.id, str(msg.author.display_avatar.url), msg.author.bot), 
             parse_formatting(self.bot, msg.content), ("discord", channel_id), msg.id, [ at for at in msg.attachments if not at.is_spoiler() ], reply=reply)
         await eventbus.push(msg)
 
@@ -424,7 +424,7 @@ When you want to end a call, use hangup.
         finally:
             os.unlink(tmppath)
 
-def setup(bot):
+async def setup(bot):
     cog = Telephone(bot)
-    bot.add_cog(cog)
+    await bot.add_cog(cog)
     asyncio.create_task(cog.initial_load_webhooks())
