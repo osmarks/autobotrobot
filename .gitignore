@@ -3,3 +3,4 @@ bot-data.json
 __pycache__
 data.sqlite3
 ts.py
+deploy.sh

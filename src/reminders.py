@@ -91,7 +91,7 @@ class Reminders(commands.Cog):
     async def send_by_dm(self, info, text):
         user = self.bot.get_user(info["author_id"])
         if not user:
-            user = await bot.fetch_user(info["author_id"])
+            user = await self.bot.fetch_user(info["author_id"])
         if not user: raise Exception(f"user {info['author_id']} unavailable/nonexistent")
         if not user.dm_channel: await user.create_dm()
         await user.dm_channel.send(text)

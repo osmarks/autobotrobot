@@ -100,6 +100,9 @@ DELETE FROM user_data WHERE guild_id IS NULL;
 """,
 """
 ALTER TABLE links ADD COLUMN cause TEXT;
+""",
+"""
+ALTER TABLE telephone_config ADD COLUMN disabled INTEGER;
 """
 ]
 
