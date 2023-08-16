@@ -105,10 +105,11 @@ guild_count.set_function(get_guild_count)
 async def run_bot():
     bot.database = await db.init(config["database"])
     await eventbus.initial_load(bot.database)
-    for ext in util.extensions:
-        logging.info("Loaded %s", ext)
-        bot.load_extension(ext)
-    await bot.start(config["token"])
+    async with bot:
+        for ext in util.extensions:
+            logging.info("Loaded %s", ext)
+            await bot.load_extension(ext)
+        await bot.start(config["token"])
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()

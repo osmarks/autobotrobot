@@ -89,7 +89,7 @@ async def initialize():
             for line in lines:
                 conn.privmsg(channel_name, render_line(msg.author, line))
             for at in msg.attachments:
-                conn.privmsg(channel_name, render_line(msg.author, f"-> {at.filename}: {at.proxy_url}"))
+                conn.privmsg(channel_name, render_line(msg.author, f"-> {at.filename}: {at.url}"))
         else:
             logging.warning("IRC channel %s not allowed", channel_name)
 
@@ -113,7 +113,7 @@ async def initialize():
     global unlisten
     unlisten = eventbus.add_listener(util.config["irc"]["name"], on_bridge_message)
 
-def setup(bot):
+async def setup(bot):
     asyncio.create_task(initialize())
 
 def teardown(bot=None):

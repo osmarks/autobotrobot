@@ -178,10 +178,10 @@ class Reminders(commands.Cog):
                     self.reminder_queue.pop(0)
                     await self.fire_reminder(next_id)
 
-def setup(bot):
+async def setup(bot):
     cog = Reminders(bot)
     asyncio.create_task(cog.init_reminders())
-    bot.add_cog(cog)
+    await bot.add_cog(cog)
 
 def teardown(bot):
     bot.rloop_task.cancel()

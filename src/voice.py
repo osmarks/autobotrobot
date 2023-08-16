@@ -16,7 +16,7 @@ class HTTPSource(discord.AudioSource):
     def read(self): return next(self.packets, b"")
     def is_opus(self): return True
 
-def setup(bot):
+async def setup(bot):
     # experimental, thus limit to me only
     @bot.group()
     @commands.check(util.admin_check)
