@@ -283,14 +283,14 @@ When you want to end a call, use hangup.
             except discord.Forbidden as f:
                 logging.warn("Could not create webhook in #%s %s", ctx.channel.name, ctx.guild.name, exc_info=f)
                 await ctx.send("Webhook creation failed - please ensure permissions are available. This is not necessary but is recommended.")
-        await self.bot.database.execute("INSERT OR REPLACE INTO telephone_config VALUES (?, ?, ?, ?)", (num, ctx.guild.id, ctx.channel.id, webhook))
+        await self.bot.database.execute("INSERT OR REPLACE INTO telephone_config VALUES (?, ?, ?, ?, 0)", (num, ctx.guild.id, ctx.channel.id, webhook))
         await self.bot.database.commit()
         await ctx.send("Configured.")
 
     @telephone.command(aliases=["rcall"], brief="Dial another telephone channel.")
     async def rdial(self, ctx):
         # TODO: this is not very performant
-        random = (await self.bot.database.execute_fetchone("SELECT id FROM telephone_config ORDER BY RANDOM()"))["id"]
+        random = (await self.bot.database.execute_fetchone("SELECT id FROM telephone_config WHERE disabled = 0 ORDER BY RANDOM()"))["id"]
         await self.dial(ctx, random)
 
     @telephone.command(aliases=["call"], brief="Dial another telephone channel.")
@@ -308,6 +308,9 @@ When you want to end a call, use hangup.
 
         # post embed in the receiving channel prompting people to accept/decline call
         recv_channel = self.bot.get_channel(recv_info["channel_id"])
+        if recv_channel is None:
+            await self.bot.database.execute("UPDATE telephone_config SET disabled = 1 WHERE id = ?", (address,))
+            return await ctx.send(embed=util.error_embed("Target channel no longer exists."))
         _, call_message = await asyncio.gather(
             ctx.send(embed=util.info_embed("Outgoing call", f"Dialing {address}...")),
             recv_channel.send(embed=util.info_embed("Incoming call", 
@@ -418,7 +421,7 @@ When you want to end a call, use hangup.
                     seen_edges.add(edge)
             seen.add(current)
         (handle, tmppath) = tempfile.mkstemp(".png", "graphviz")
-        graph.write_png(tmppath)
+        graph.write_png(tmppath, prog="neato")
         try:
             await ctx.send(file=discord.File(handle, filename="out.png"))
         finally:

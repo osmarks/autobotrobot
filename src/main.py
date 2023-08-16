@@ -27,6 +27,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(asctime)s %(mess
 
 intents = discord.Intents.default()
 intents.members = True
+intents.presences = True
 intents.message_content = True
 
 bot = commands.Bot(command_prefix=commands.when_mentioned_or(config["prefix"]), description="AutoBotRobot, the most useless bot in the known universe." + util.config.get("description_suffix", ""), 
