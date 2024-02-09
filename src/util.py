@@ -15,6 +15,7 @@ import time
 import math
 import pytz
 import collections
+import aiohttp
 
 config = {}
 
@@ -335,3 +336,11 @@ def chunks(source, length):
     for i in range(0, len(source), length):
         yield source[i : i+length]
 
+async def generate(response: aiohttp.ClientSession, prompt):
+    async with response.post(config["ai"]["llm_backend"], json={
+        "prompt": prompt,
+        "max_tokens": 200,
+        "stop": ["\n\n"]
+    }) as res:
+        data = await res.json()
+        return data["choices"][0]["text"]

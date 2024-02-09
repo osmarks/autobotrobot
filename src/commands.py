@@ -177,5 +177,29 @@ AutoBotRobot is operated by gollark/osmarks.
 
         await ctx.send("\n".join(map(lambda x: f"{x[0]} x{x[1]}", results)))
 
+    @commands.command(help="Highly advanced AI Asisstant.")
+    async def ai(self, ctx, *, query=None):
+        prompt = []
+        async for message in ctx.channel.history(limit=20):
+            display_name = message.author.display_name
+            if message.author == self.bot.user:
+                display_name = util.config["ai"]["own_name"]
+            content = message.content
+            if content.startswith(ctx.prefix + "ai"):
+                content = content.removeprefix(ctx.prefix + "ai").lstrip()
+            if not content and message.embeds:
+                content = message.embeds[0].title
+            elif not content and message.attachments:
+                content = "[attachments]"
+            if not content:
+                continue
+            prompt.append(f"{display_name}: {content}\n\n")
+            if sum(len(x) for x in prompt) > util.config["ai"]["max_len"]:
+                break
+        prompt.reverse()
+        prompt.append(util.config["ai"]["own_name"] + ": ")
+        generation = await util.generate(self.session, "".join(prompt))
+        if generation: await ctx.send(generation)
+
 def setup(bot):
     bot.add_cog(GeneralCommands(bot))

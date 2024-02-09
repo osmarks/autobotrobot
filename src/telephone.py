@@ -104,7 +104,10 @@ class Telephone(commands.Cog):
                 else:
                     text = f"<{msg.author.name}> {text}"
                     await channel.send(text[:2000], allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False))
-            await send_raw(render_formatting(channel, msg.message)[:2000])
+            content = render_formatting(channel, msg.message)[:2000]
+            if channel_id in util.config["bridge_show_src"] and msg.source[0] == "discord":
+                content = f"<#{msg.source[1]}> " + content
+            await send_raw(content)
             if attachments_text: await send_raw(attachments_text)
         else:
             logging.warning("Channel %d not found", channel_id)
@@ -180,7 +183,6 @@ When you want to end a call, use hangup.
         await eventbus.remove_bridge_link(self.bot.database, ("discord", ctx.channel.id), (target_type, target_id), bidirectional)
         await ctx.send(f"Successfully deleted.")
         pass
-
 
     async def find_recent(self, chs, query):
         one_week = timedelta(seconds=60*60*24*7)
@@ -393,7 +395,7 @@ When you want to end a call, use hangup.
 
     @telephone.command(brief="Dump links out of current channel.")
     async def graph(self, ctx):
-        graph = pydot.Dot("linkgraph", ratio="fill")
+        graph = pydot.Dot("linkgraph", ratio="fill", overlap="false")
         seen = set()
         seen_edges = set()
         def node_name(x):
