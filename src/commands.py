@@ -119,7 +119,22 @@ class GeneralCommands(commands.Cog):
 
     @commands.command(help="Get some information about the bot.", aliases=["invite"])
     async def about(self, ctx):
-        await ctx.send("""**AutoBotRobot: The least useful Discord bot ever designed.**
+        taglines = [
+            "the superintelligent AI presently paperclipping you",
+            "in your walls",
+            "we know what you did",
+            "PRs welcome",
+            "the bot in the mainframe",
+            "now controlling the voices in your head",
+            "now verified 96% safe",
+            "it's sentient, so be nice to it",
+            "now based on category theory",
+            "do not press the button",
+            "deeply accursed Python",
+            "no better bot exists, will exist, or can exist in this universe",
+            "coming soon"
+        ]
+        await ctx.send(f"""**AutoBotRobot: {random.choice(taglines)}.**
 AutoBotRobot has many features, but not necessarily any practical ones.
 It can execute code via TIO.run, do reminders, print fortunes, bridge IRC, store data, and search things!
 AutoBotRobot is open source - the code is available at <https://github.com/osmarks/AutoBotRobot> - and you could run your own instance if you wanted to and could get around the complete lack of user guide or documentation.
@@ -180,6 +195,7 @@ AutoBotRobot is operated by gollark/osmarks.
     @commands.command(help="Highly advanced AI Asisstant.")
     async def ai(self, ctx, *, query=None):
         prompt = []
+        seen = set()
         async for message in ctx.channel.history(limit=20):
             display_name = message.author.display_name
             if message.author == self.bot.user:
@@ -193,6 +209,9 @@ AutoBotRobot is operated by gollark/osmarks.
                 content = "[attachments]"
             if not content:
                 continue
+            if message.author == self.bot.user:
+                if content in seen: continue
+                seen.add(content)
             prompt.append(f"{display_name}: {content}\n\n")
             if sum(len(x) for x in prompt) > util.config["ai"]["max_len"]:
                 break

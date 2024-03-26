@@ -30,7 +30,7 @@ intents.members = True
 intents.presences = True
 intents.message_content = True
 
-bot = commands.Bot(command_prefix=commands.when_mentioned_or(config["prefix"]), description="AutoBotRobot, the most useless bot in the known universe." + util.config.get("description_suffix", ""), 
+bot = commands.Bot(command_prefix=commands.when_mentioned_or(config["prefix"]), description="AutoBotRobot, the omniscient, omnipotent, omnibenevolent Discord bot by gollark." + util.config.get("description_suffix", ""), 
     case_insensitive=True, allowed_mentions=discord.AllowedMentions(everyone=False, users=True, roles=True), intents=intents)
 bot._skip_check = lambda x, y: False
 
