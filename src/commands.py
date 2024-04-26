@@ -6,6 +6,7 @@ import re
 import aiohttp
 import subprocess
 import discord.ext.commands as commands
+from datetime import datetime
 
 import tio
 import util
@@ -192,10 +193,14 @@ AutoBotRobot is operated by gollark/osmarks.
 
         await ctx.send("\n".join(map(lambda x: f"{x[0]} x{x[1]}", results)))
 
-    @commands.command(help="Highly advanced AI Asisstant.")
+    @commands.command(help="Highly advanced AI Assistant.")
     async def ai(self, ctx, *, query=None):
         prompt = []
         seen = set()
+
+        def render(dt: datetime):
+            return f"{dt.hour}:{dt.minute}"
+
         async for message in ctx.channel.history(limit=20):
             display_name = message.author.display_name
             if message.author == self.bot.user:
@@ -212,13 +217,13 @@ AutoBotRobot is operated by gollark/osmarks.
             if message.author == self.bot.user:
                 if content in seen: continue
                 seen.add(content)
-            prompt.append(f"{display_name}: {content}\n\n")
+            prompt.append(f"[{render(message.created_at)}] {display_name}: {content}\n")
             if sum(len(x) for x in prompt) > util.config["ai"]["max_len"]:
                 break
         prompt.reverse()
-        prompt.append(util.config["ai"]["own_name"] + ": ")
+        prompt.append(f'[{render(datetime.utcnow())}] {util.config["ai"]["own_name"]}:')
         generation = await util.generate(self.session, "".join(prompt))
-        if generation: await ctx.send(generation)
+        if generation.strip(): await ctx.send(generation.strip())
 
 def setup(bot):
     bot.add_cog(GeneralCommands(bot))

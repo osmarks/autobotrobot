@@ -340,7 +340,7 @@ async def generate(response: aiohttp.ClientSession, prompt):
     async with response.post(config["ai"]["llm_backend"], json={
         "prompt": prompt,
         "max_tokens": 200,
-        "stop": ["\n\n"]
+        "stop": ["\n"]
     }) as res:
         data = await res.json()
         return data["choices"][0]["text"]
