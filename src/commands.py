@@ -199,7 +199,7 @@ AutoBotRobot is operated by gollark/osmarks.
         seen = set()
 
         def render(dt: datetime):
-            return f"{dt.hour}:{dt.minute}"
+            return f"{dt.hour:02}:{dt.minute:02}"
 
         async for message in ctx.channel.history(limit=20):
             display_name = message.author.display_name
