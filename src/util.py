@@ -16,6 +16,7 @@ import math
 import pytz
 import collections
 import aiohttp
+import string
 
 config = {}
 
@@ -36,7 +37,7 @@ prefixes = {
     # highly dubiously useful unofficial prefixes
     "R": 27, "r": -27, "Q": 30, "q": -30, "X": 27, "x": -27, "W": 30, "w": -30
 }
-number = "(-?[0-9]+(?:\.[0-9]+)?)(" + "|".join(prefixes.keys()) + ")?"
+number = "(-?[0-9]+(?:\\.[0-9]+)?)(" + "|".join(prefixes.keys()) + ")?"
 
 time_units = (
     ("galacticyears", "cosmicyears", "gy", "[Cc]y"),
@@ -140,7 +141,7 @@ def format_timedelta(from_, to):
         if x != 0: out += str(x) + short
     return "0s" if out == "" else out
 
-CODEBLOCK_REGEX = "^[^`]*```[a-zA-Z0-9_\-+]*\n(.+)```$"
+CODEBLOCK_REGEX = "^[^`]*```[a-zA-Z0-9_\\-+]*\n(.+)```$"
 CODELINE_REGEX = "^[^`]*`(.*)`$"
 def extract_codeblock(s):
     match1 = re.match(CODEBLOCK_REGEX, s, flags=re.DOTALL)
@@ -344,3 +345,8 @@ async def generate(response: aiohttp.ClientSession, prompt):
     }) as res:
         data = await res.json()
         return data["choices"][0]["text"]
+
+filesafe_charset = string.ascii_letters + string.digits + "-"
+
+def meme_thumbnail(original):
+    return ''.join([ i if i in filesafe_charset else '_' for i in (config["memetics"]["meme_base"] + "/" + original) ]) + "." + config["memetics"]["target_format"] + config["memetics"]["target_format_ext"]

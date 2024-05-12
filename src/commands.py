@@ -6,7 +6,9 @@ import re
 import aiohttp
 import subprocess
 import discord.ext.commands as commands
+import discord
 from datetime import datetime
+from pathlib import Path
 
 import tio
 import util
@@ -224,6 +226,22 @@ AutoBotRobot is operated by gollark/osmarks.
         prompt.append(f'[{render(datetime.utcnow())}] {util.config["ai"]["own_name"]}:')
         generation = await util.generate(self.session, util.config["ai"]["prompt_start"] + "".join(prompt))
         if generation.strip(): await ctx.send(generation.strip())
+
+    @commands.command(help="Search meme library.", aliases=["memes"])
+    async def meme(self, ctx, *, query=None):
+        search_many = ctx.invoked_with == "memes"
+        raw_memes = await util.user_config_lookup(ctx, "enable_raw_memes") == "true"
+        async with self.session.post(util.config["memetics"]["meme_search_backend"], json={
+            "text": [[query, 1]],
+            "top_k": 4 if search_many else 1
+        }) as res:
+            results = await res.json()
+        files = [ x["file"] for x in results ]
+        if raw_memes:
+            o_files = [ discord.File(Path(util.config["memetics"]["memes_local"]) / Path(util.config["memetics"]["meme_base"]) / f) for f in files ]
+        else:
+            o_files = [ discord.File(Path(util.config["memetics"]["memes_local"]) / Path(util.config["memetics"]["thumb_base"]) / util.meme_thumbnail(f)) for f in files ]
+        await ctx.send(files=o_files)
 
 def setup(bot):
     bot.add_cog(GeneralCommands(bot))
