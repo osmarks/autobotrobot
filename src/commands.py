@@ -222,7 +222,7 @@ AutoBotRobot is operated by gollark/osmarks.
                 break
         prompt.reverse()
         prompt.append(f'[{render(datetime.utcnow())}] {util.config["ai"]["own_name"]}:')
-        generation = await util.generate(self.session, "".join(prompt))
+        generation = await util.generate(self.session, util.config["ai"]["prompt_start"] + "".join(prompt))
         if generation.strip(): await ctx.send(generation.strip())
 
 def setup(bot):
