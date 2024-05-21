@@ -17,6 +17,7 @@ import pytz
 import collections
 import aiohttp
 import string
+from pathlib import Path
 
 config = {}
 
@@ -341,12 +342,26 @@ async def generate(response: aiohttp.ClientSession, prompt):
     async with response.post(config["ai"]["llm_backend"], json={
         "prompt": prompt,
         "max_tokens": 200,
-        "stop": ["\n"]
+        "stop": ["\n"],
+        "client": "abr"
     }) as res:
         data = await res.json()
         return data["choices"][0]["text"]
 
 filesafe_charset = string.ascii_letters + string.digits + "-"
 
-def meme_thumbnail(original):
-    return ''.join([ i if i in filesafe_charset else '_' for i in (config["memetics"]["meme_base"] + "/" + original) ]) + "." + config["memetics"]["target_format"] + config["memetics"]["target_format_ext"]
+TARGET_FORMAT = "jpegh"
+def meme_thumbnail(results, result):
+    try:
+        format_id = results["formats"].index(TARGET_FORMAT)
+    except ValueError:
+        format_id = None
+
+    if not format_id:
+        return Path(config["memetics"]["meme_base"]) / result[1]
+    else:
+        format_id = 1 << format_id
+        if result[3] & format_id != 0:
+            return Path(config["memetics"]["thumb_base"]) / f"{result[2]}{TARGET_FORMAT}.{results['extensions'][TARGET_FORMAT]}"
+        else:
+            return Path(config["memetics"]["meme_base"]) / result[1]
