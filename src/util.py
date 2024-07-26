@@ -314,7 +314,8 @@ extensions = (
     "userdata",
     "irc_link",
     "search",
-    "esoserver"
+    "esoserver",
+    "sentience"
 )
 
 # https://github.com/SawdustSoftware/simpleflake/blob/master/simpleflake/simpleflake.py

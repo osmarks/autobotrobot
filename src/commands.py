@@ -195,52 +195,5 @@ AutoBotRobot is operated by gollark/osmarks.
 
         await ctx.send("\n".join(map(lambda x: f"{x[0]} x{x[1]}", results)))
 
-    @commands.command(help="Highly advanced AI Assistant.")
-    async def ai(self, ctx, *, query=None):
-        prompt = []
-        seen = set()
-
-        def render(dt: datetime):
-            return f"{dt.hour:02}:{dt.minute:02}"
-
-        async for message in ctx.channel.history(limit=20):
-            display_name = message.author.display_name
-            if message.author == self.bot.user:
-                display_name = util.config["ai"]["own_name"]
-            content = message.content
-            if content.startswith(ctx.prefix + "ai"):
-                content = content.removeprefix(ctx.prefix + "ai").lstrip()
-            if not content and message.embeds:
-                content = message.embeds[0].title
-            elif not content and message.attachments:
-                content = "[attachments]"
-            if not content:
-                continue
-            if message.author == self.bot.user:
-                if content in seen: continue
-                seen.add(content)
-            prompt.append(f"[{render(message.created_at)}] {display_name}: {content}\n")
-            if sum(len(x) for x in prompt) > util.config["ai"]["max_len"]:
-                break
-        prompt.reverse()
-        prompt.append(f'[{render(datetime.utcnow())}] {util.config["ai"]["own_name"]}:')
-        generation = await util.generate(self.session, util.config["ai"]["prompt_start"] + "".join(prompt))
-        if generation.strip(): await ctx.send(generation.strip())
-
-    @commands.command(help="Search meme library.", aliases=["memes"])
-    async def meme(self, ctx, *, query=None):
-        search_many = ctx.invoked_with == "memes"
-        raw_memes = await util.user_config_lookup(ctx, "enable_raw_memes") == "true"
-        async with self.session.post(util.config["memetics"]["meme_search_backend"], json={
-            "terms": [{"text": query, "weight": 1}],
-            "k": 4 if search_many else 1
-        }) as res:
-            results = await res.json()
-        if raw_memes:
-            o_files = [ discord.File(Path(util.config["memetics"]["memes_local"]) / Path(util.config["memetics"]["meme_base"]) / m[1]) for m in results["matches"] ]
-        else:
-            o_files = [ discord.File(Path(util.config["memetics"]["memes_local"]) / util.meme_thumbnail(results, m)) for m in results["matches"] ]
-        await ctx.send(files=o_files)
-
 def setup(bot):
     bot.add_cog(GeneralCommands(bot))

@@ -22,6 +22,7 @@ achievements = {
 }
 
 async def achieve(bot: commands.Bot, message: discord.Message, achievement):
+    guild_conf = None
     if message.guild:
         guild_conf = await bot.database.execute_fetchone("SELECT achievement_messages FROM guild_config WHERE id = ?", (message.guild.id,))
     if guild_conf and guild_conf["achievement_messages"] == 0: return
