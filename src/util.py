@@ -344,8 +344,9 @@ async def generate(response: aiohttp.ClientSession, prompt):
         "prompt": prompt,
         "max_tokens": 200,
         "stop": ["\n"],
-        "client": "abr"
-    }) as res:
+        "client": "abr",
+        **config["ai"].get("params", {})
+    }, headers=config["ai"].get("headers", {})) as res:
         data = await res.json()
         return data["choices"][0]["text"]
 
