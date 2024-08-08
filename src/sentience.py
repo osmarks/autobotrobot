@@ -121,11 +121,11 @@ class Sentience(commands.Cog):
             "k": 20
         }) as res:
             results = await res.json()
-            results = results[:(4 if search_many else 1)]
+            mat = results["matches"][:(4 if search_many else 1)]
         if raw_memes:
-            o_files = [ discord.File(Path(util.config["memetics"]["memes_local"]) / Path(util.config["memetics"]["meme_base"]) / m[1]) for m in results["matches"] ]
+            o_files = [ discord.File(Path(util.config["memetics"]["memes_local"]) / Path(util.config["memetics"]["meme_base"]) / m[1]) for m in mat ]
         else:
-            o_files = [ discord.File(Path(util.config["memetics"]["memes_local"]) / util.meme_thumbnail(results, m)) for m in results["matches"] ]
+            o_files = [ discord.File(Path(util.config["memetics"]["memes_local"]) / util.meme_thumbnail(results, m)) for m in mat ]
         await ctx.send(files=o_files)
 
 def setup(bot):
