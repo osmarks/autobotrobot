@@ -41,6 +41,8 @@ class Sentience(commands.Cog):
             for prefix in PREFIXES:
                 if content.startswith(prefix):
                     content = content.removeprefix(prefix).lstrip()
+            if content == "wipe_memory":
+                prompt = []
             if not content and message.embeds:
                 content = message.embeds[0].title
             elif not content and message.attachments:
@@ -102,10 +104,10 @@ class Sentience(commands.Cog):
         print(gollark_data + conversation)
 
         # generate response
-        generation = await util.generate(self.session, "GOLLARK SAMPLES:\n" + gollark_data + "CONVERSATION:\n" + conversation)
-        print("output", generation)
-        if generation.strip():
-            await ctx.send(AUTOGOLLARK_MARKER + generation.strip())
+        generation = await util.generate(self.session, gollark_data + conversation, stop=["\n["])
+        generation = generation.strip().strip("[\n ")
+        if generation:
+            await ctx.send(AUTOGOLLARK_MARKER + generation)
 
     @commands.Cog.listener("on_message")
     async def autogollark_listener(self, message):
@@ -118,7 +120,7 @@ class Sentience(commands.Cog):
         raw_memes = await util.user_config_lookup(ctx, "enable_raw_memes") == "true"
         async with self.session.post(util.config["memetics"]["meme_search_backend"], json={
             "terms": [{"text": query, "weight": 1}],
-            "k": 20
+            "k": 200
         }) as res:
             results = await res.json()
             mat = results["matches"][:(4 if search_many else 1)]
