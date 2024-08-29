@@ -41,8 +41,6 @@ class Sentience(commands.Cog):
             for prefix in PREFIXES:
                 if content.startswith(prefix):
                     content = content.removeprefix(prefix).lstrip()
-            if content == "wipe_memory":
-                prompt = []
             if not content and message.embeds:
                 content = message.embeds[0].title
             elif not content and message.attachments:
@@ -105,7 +103,12 @@ class Sentience(commands.Cog):
 
         # generate response
         generation = await util.generate(self.session, gollark_data + conversation, stop=["\n["])
-        generation = generation.strip().strip("[\n ")
+        while True:
+            new_generation = generation.strip().strip("[\n ")
+            new_generation = new_generation.removesuffix("---")
+            if new_generation == generation:
+                break
+            generation = new_generation
         if generation:
             await ctx.send(AUTOGOLLARK_MARKER + generation)
 
