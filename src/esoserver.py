@@ -8,7 +8,7 @@ import metrics
 
 role_transfer_lock = asyncio.Lock()
 
-def setup(bot):
+async def setup(bot):
 	@bot.listen()
 	async def on_message(message):
 		if message.guild and message.guild.id == util.config["esoserver"]["id"]:

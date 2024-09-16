@@ -270,7 +270,7 @@ async def get_asset(bot: commands.Bot, identifier):
         return x["url"]
     file = discord.File(os.path.join("./assets", identifier), filename=safe_ident)
     message = await (bot.get_channel(config["image_upload_channel"])).send(identifier, file=file)
-    url = message.attachments[0].proxy_url
+    url = message.attachments[0].url
     await bot.database.execute("INSERT INTO assets VALUES (?, ?)", (safe_ident, url))
     return url
 

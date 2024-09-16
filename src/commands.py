@@ -195,5 +195,5 @@ AutoBotRobot is operated by gollark/osmarks.
 
         await ctx.send("\n".join(map(lambda x: f"{x[0]} x{x[1]}", results)))
 
-def setup(bot):
-    bot.add_cog(GeneralCommands(bot))
+async def setup(bot):
+    await bot.add_cog(GeneralCommands(bot))

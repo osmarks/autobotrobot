@@ -87,5 +87,5 @@ class Userdata(commands.Cog):
             await self.bot.database.commit()
             await ctx.send(f"**{key}** deleted")
 
-def setup(bot):
-    bot.add_cog(Userdata(bot))
+async def setup(bot):
+    await bot.add_cog(Userdata(bot))
