@@ -386,6 +386,8 @@ async def generate(sess: aiohttp.ClientSession, prompt, stop=["\n"]):
         try:
             result = await generate_raw(sess, backend, prompt, stop)
             backend_successes.labels(backend["url"]).inc()
+            failure_stats = last_failures[backend["url"]]
+            failure_stats.consecutive_failures = 0
             return result
         except Exception as e:
             backend_failures.labels(backend["url"]).inc()
