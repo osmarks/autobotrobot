@@ -18,12 +18,18 @@ import collections
 import aiohttp
 import string
 from pathlib import Path
+import sys
+import dataclasses
+import logging
+import prometheus_client
 
 config = {}
 
+config_path = os.path.join(os.path.dirname(__file__), "../config.toml")
+
 # update in place for runtime config reload
 def load_config():
-    for k, v in toml.load(open(os.path.join(os.path.dirname(__file__), "../config.toml"), "r")).items(): config[k] = v
+    for k, v in toml.load(open(config_path, "r")).items(): config[k] = v
 
 load_config()
 
@@ -74,7 +80,7 @@ fractional_tu_mappings = {
 }
 
 def rpartfor(u):
-    if u[0][-1] == "s": 
+    if u[0][-1] == "s":
         l = [u[0] + "?"]
         l.extend(u[1:])
     else: l = u
@@ -203,7 +209,7 @@ lyrictable_raw = {
         }
 lyrictable = str.maketrans({v: k for k, v in lyrictable_raw.items()})
 
-apioinfixes = ["cryo", "pyro", "chrono", "meta", "anarcho", "arachno", "aqua", "accelero", "hydro", "radio", "xeno", "morto", "thanato", "memeto", 
+apioinfixes = ["cryo", "pyro", "chrono", "meta", "anarcho", "arachno", "aqua", "accelero", "hydro", "radio", "xeno", "morto", "thanato", "memeto",
     "contra", "umbra", "macrono", "acantho", "acousto", "aceto", "acro", "aeolo", "hexa", "aero", "aesthio", "agro", "ferro", "alumino",
     "ammonio", "anti", "ankylo", "aniso", "annulo", "apo", "abio", "archeo", "argento", "arseno", "arithmo", "astro", "atlo", "auto", "axo",
     "azido", "bacillo", "bario", "balneo", "baryo", "basi", "benzo", "bismuto", "boreo", "biblio", "spatio", "boro", "bromo", "brachio",
@@ -229,7 +235,7 @@ apioinfixes = ["cryo", "pyro", "chrono", "meta", "anarcho", "arachno", "aqua", "
     "temporo", "tera", "tetra", "thalasso", "thaumato", "thermo", "tephro", "tessera", "thio", "titano", "tomo", "topo", "tono", "tungsto",
     "turbo", "tyranno", "ultra", "undeca", "tribo", "trito", "tropho", "tropo", "uni", "urano", "video", "viro", "visuo", "xantho", "xenna",
     "xeri", "xipho", "xylo", "xyro", "yocto", "yttro", "zepto", "zetta", "zinco", "zirco", "zoo", "zono", "zygo", "templateo", "rustaceo", "mnesto",
-    "amnesto", "cetaceo", "anthropo", "ioctlo", "crustaceo", "citrono", "apeiro", "Ægypto", "equi", "anglo", "atto", "ortho", "macro", "micro", "auro", 
+    "amnesto", "cetaceo", "anthropo", "ioctlo", "crustaceo", "citrono", "apeiro", "Ægypto", "equi", "anglo", "atto", "ortho", "macro", "micro", "auro",
     "Australo", "dys", "eu", "giga", "Inver", "omni", "semi", "Scando", "sub", "super", "trans", "ur-", "un", "mid", "mis", "ante", "intra"]
 apiosuffixes = ["hazard", "form"]
 
@@ -339,16 +345,54 @@ def chunks(source, length):
     for i in range(0, len(source), length):
         yield source[i : i+length]
 
-async def generate(sess: aiohttp.ClientSession, prompt, stop=["\n"]):
-    async with sess.post(config["ai"]["llm_backend"], json={
+@dataclasses.dataclass
+class BackendStatus:
+    consecutive_failures: int = 0
+    avoid_until: datetime.datetime | None = None
+
+last_failures = {}
+
+backend_successes = prometheus_client.Counter("abr_llm_backend_success", "Number of successful requests to LLM backends", labelnames=["backend"])
+backend_failures = prometheus_client.Counter("abr_llm_backend_failure", "Number of failed requests to LLM backends", labelnames=["backend"])
+
+async def generate_raw(sess: aiohttp.ClientSession, backend, prompt, stop):
+    async with sess.post(backend["url"], json={
         "prompt": prompt,
         "max_tokens": 200,
         "stop": stop,
         "client": "abr",
-        **config["ai"].get("params", {})
-    }, headers=config["ai"].get("headers", {})) as res:
+        **backend.get("params", {})
+    }, headers=backend.get("headers", {}), timeout=aiohttp.ClientTimeout(total=30)) as res:
         data = await res.json()
         return data["choices"][0]["text"]
+
+async def generate(sess: aiohttp.ClientSession, prompt, stop=["\n"]):
+    backends = config["ai"]["llm_backend"]
+    for backend in backends:
+        if backend["url"] not in last_failures:
+            last_failures[backend["url"]] = BackendStatus()
+        status = last_failures[backend["url"]]
+
+    now = datetime.datetime.now(datetime.UTC)
+
+    # high to low
+    def sort_key(backend):
+        failure_stats = last_failures[backend["url"]]
+        return (failure_stats.avoid_until is None or failure_stats.avoid_until < now), -failure_stats.consecutive_failures, backend["priority"]
+
+    backends = sorted(backends, key=sort_key, reverse=True)
+
+    for backend in backends:
+        try:
+            result = await generate_raw(sess, backend, prompt, stop)
+            backend_successes.labels(backend["url"]).inc()
+            return result
+        except Exception as e:
+            backend_failures.labels(backend["url"]).inc()
+            logging.warning("LLM backend %s failed: %s", backend["url"], e)
+            failure_stats = last_failures[backend["url"]]
+            failure_stats.avoid_until = now + datetime.timedelta(seconds=2 ** failure_stats.consecutive_failures)
+            failure_stats.consecutive_failures += 1
 
 filesafe_charset = string.ascii_letters + string.digits + "-"
 
@@ -367,3 +411,6 @@ def meme_thumbnail(results, result):
             return Path(config["memetics"]["thumb_base"]) / f"{result[2]}{TARGET_FORMAT}.{results['extensions'][TARGET_FORMAT]}"
         else:
             return Path(config["memetics"]["meme_base"]) / result[1]
+
+def render_time(dt: datetime.datetime):
+    return f"{dt.hour:02}:{dt.minute:02}"

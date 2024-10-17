@@ -20,6 +20,7 @@ import util
 import eventbus
 import irc_link
 import achievement
+import autogollark
 
 config = util.config
 
@@ -30,7 +31,7 @@ intents.members = True
 intents.presences = True
 intents.message_content = True
 
-bot = commands.Bot(command_prefix=commands.when_mentioned_or(config["prefix"]), description="AutoBotRobot, the omniscient, omnipotent, omnibenevolent Discord bot by gollark." + util.config.get("description_suffix", ""), 
+bot = commands.Bot(command_prefix=commands.when_mentioned_or(config["prefix"]), description="AutoBotRobot, the omniscient, omnipotent, omnibenevolent Discord bot by gollark." + util.config.get("description_suffix", ""),
     case_insensitive=True, allowed_mentions=discord.AllowedMentions(everyone=False, users=True, roles=True), intents=intents)
 bot._skip_check = lambda x, y: False
 
@@ -78,7 +79,7 @@ async def andrew_bad(ctx):
 @bot.event
 async def on_ready():
     logging.info("Connected as " + bot.user.name)
-    await bot.change_presence(status=discord.Status.online, 
+    await bot.change_presence(status=discord.Status.online,
         activity=discord.Activity(name=f"{config['prefix']}help", type=discord.ActivityType.listening))
 
 visible_users = prometheus_client.Gauge("abr_visible_users", "Users the bot can see")
@@ -108,6 +109,7 @@ async def run_bot():
     for ext in util.extensions:
         logging.info("Loaded %s", ext)
         bot.load_extension(ext)
+    asyncio.create_task(autogollark.run_bot())
     await bot.start(config["token"])
 
 if __name__ == "__main__":

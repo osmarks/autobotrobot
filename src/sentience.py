@@ -13,15 +13,9 @@ from pathlib import Path
 import tio
 import util
 
-def render(dt: datetime):
-    return f"{dt.hour:02}:{dt.minute:02}"
-
 cleaner = commands.clean_content()
 def clean(ctx, text):
     return cleaner.convert(ctx, text)
-
-AUTOGOLLARK_MARKER = "\u200b"
-AUTOGOLLARK_GOLLARK = "autogollark"
 
 class Sentience(commands.Cog):
     def __init__(self, bot):
@@ -48,13 +42,9 @@ class Sentience(commands.Cog):
             if not content:
                 continue
             if message.author == self.bot.user:
-                if message.content.startswith(AUTOGOLLARK_MARKER):
-                    content = message.content.removeprefix(AUTOGOLLARK_MARKER)
-                    display_name = AUTOGOLLARK_GOLLARK
-
                 if content in seen: continue
                 seen.add(content)
-            prompt.append(f"[{render(message.created_at)}] {display_name}: {content}\n")
+            prompt.append(f"[{util.render_time(message.created_at)}] {display_name}: {content}\n")
             if sum(len(x) for x in prompt) > util.config["ai"]["max_len"]:
                 break
         prompt.reverse()
@@ -63,59 +53,10 @@ class Sentience(commands.Cog):
     @commands.command(help="Highly advanced AI Assistant.")
     async def ai(self, ctx, *, query=None):
         prompt = await self.serialize_history(ctx)
-        prompt.append(f'[{render(datetime.utcnow())}] {util.config["ai"]["own_name"]}:')
+        prompt.append(f'[{util.render_time(datetime.utcnow())}] {util.config["ai"]["own_name"]}:')
         generation = await util.generate(self.session, util.config["ai"]["prompt_start"] + "".join(prompt))
         if generation.strip():
             await ctx.send(generation.strip())
-
-    @commands.command(help="Emulated gollark instance.", aliases=["gollark", "ag"])
-    async def autogollark(self, ctx):
-        prompt = await self.serialize_history(ctx, n=50)
-        prompt.append(f"[{render(datetime.utcnow())}] {AUTOGOLLARK_GOLLARK}:")
-        conversation = "".join(prompt)
-        # retrieve gollark data from backend
-        gollark_chunks = []
-        async with self.session.post(util.config["ai"]["autogollark_server"], json={"query": conversation}) as res:
-            for chunk in (await res.json()):
-                gollark_chunk = []
-                if sum(len(y) for x in gollark_chunks for y in x) > util.config["ai"]["max_gollark_len"]: gollark_chunks.pop(0)
-                for message in chunk:
-                    dt = datetime.fromisoformat(message["timestamp"])
-                    line = f"[{render(dt)}] {message['author'] or AUTOGOLLARK_GOLLARK}: {await clean(ctx, message['contents'])}\n"
-                    gollark_chunk.append(line)
-                    
-                    # ugly hack to remove duplicates
-                    ds = []
-                    for chunk in gollark_chunks:
-                        if line in chunk and line != "---\n": ds.append(chunk)
-                    for d in ds:
-                        print("delete chunk", d)
-                        try:
-                            gollark_chunks.remove(d)
-                        except ValueError: pass
-
-                gollark_chunk.append("---\n")
-                gollark_chunks.append(gollark_chunk)
-
-        gollark_data = "".join("".join(x) for x in gollark_chunks)
-
-        print(gollark_data + conversation)
-
-        # generate response
-        generation = await util.generate(self.session, gollark_data + conversation, stop=["\n["])
-        while True:
-            new_generation = generation.strip().strip("[\n ")
-            new_generation = new_generation.removesuffix("---")
-            if new_generation == generation:
-                break
-            generation = new_generation
-        if generation:
-            await ctx.send(AUTOGOLLARK_MARKER + generation)
-
-    @commands.Cog.listener("on_message")
-    async def autogollark_listener(self, message):
-        if message.channel.id in util.config["ai"]["autogollark_channels"] and not message.content.startswith(AUTOGOLLARK_MARKER):
-            await self.autogollark(commands.Context(bot=self.bot, message=message, prefix="", view=None))
 
     @commands.command(help="Search meme library.", aliases=["memes"])
     async def meme(self, ctx, *, query=None):
