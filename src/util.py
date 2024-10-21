@@ -378,7 +378,7 @@ async def generate(sess: aiohttp.ClientSession, prompt, stop=["\n"]):
     # high to low
     def sort_key(backend):
         failure_stats = last_failures[backend["url"]]
-        return (failure_stats.avoid_until is None or failure_stats.avoid_until < now), -failure_stats.consecutive_failures, backend["priority"]
+        return (failure_stats.avoid_until is None or failure_stats.avoid_until < now), backend["priority"], -failure_stats.consecutive_failures
 
     backends = sorted(backends, key=sort_key, reverse=True)
 
