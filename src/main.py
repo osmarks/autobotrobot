@@ -74,7 +74,7 @@ async def on_command_error(ctx, err):
 
 @bot.check
 async def andrew_bad(ctx):
-    return ctx.message.author.id != 543131534685765673
+    return ctx.message.author.id != 543131534685765673 or ctx.message.author.id != 739032871087374408 or ctx.message.author.id in config.get("bans", [])
 
 @bot.event
 async def on_ready():
@@ -108,7 +108,7 @@ async def run_bot():
     await eventbus.initial_load(bot.database)
     for ext in util.extensions:
         logging.info("Loaded %s", ext)
-        bot.load_extension(ext)
+        await bot.load_extension(ext)
     asyncio.create_task(autogollark.run_bot())
     await bot.start(config["token"])
 

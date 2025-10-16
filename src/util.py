@@ -378,7 +378,8 @@ async def generate(sess: aiohttp.ClientSession, prompt, stop=["\n"]):
     # high to low
     def sort_key(backend):
         failure_stats = last_failures[backend["url"]]
-        return (failure_stats.avoid_until is None or failure_stats.avoid_until < now), backend["priority"], -failure_stats.consecutive_failures
+        currently_ok = failure_stats.avoid_until is None or failure_stats.avoid_until < now
+        return currently_ok, -(not currently_ok and failure_stats.consecutive_failures), backend["priority"]
 
     backends = sorted(backends, key=sort_key, reverse=True)
 
@@ -395,6 +396,16 @@ async def generate(sess: aiohttp.ClientSession, prompt, stop=["\n"]):
             failure_stats = last_failures[backend["url"]]
             failure_stats.avoid_until = now + datetime.timedelta(seconds=2 ** failure_stats.consecutive_failures)
             failure_stats.consecutive_failures += 1
+
+async def generate_raw_chatcompletion(sess: aiohttp.ClientSession, backend, prompt):
+    async with sess.post(backend["url"], json={
+        "messages": [{"role": "user", "content": prompt}],
+        "client": "abr",
+        **backend.get("params", {})
+    }, headers=backend.get("headers", {}), timeout=aiohttp.ClientTimeout(total=30)) as res:
+        data = await res.json()
+        print(data)
+        return data["choices"][0]["message"]["content"]
 
 filesafe_charset = string.ascii_letters + string.digits + "-"
 

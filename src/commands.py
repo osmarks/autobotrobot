@@ -101,7 +101,7 @@ class GeneralCommands(commands.Cog):
                 await ctx.send(embed=util.error_embed(util.gen_codeblock(result), "Execution failed"))
             else:
                 out = result
-                if flags.verbose: 
+                if flags.verbose:
                     debug_block = "\n" + util.gen_codeblock(f"""{debug}\nLanguage:  {real_lang}""")
                     out = out[:2000 - len(debug_block)] + debug_block
                 else:
@@ -195,5 +195,5 @@ AutoBotRobot is operated by gollark/osmarks.
 
         await ctx.send("\n".join(map(lambda x: f"{x[0]} x{x[1]}", results)))
 
-def setup(bot):
-    bot.add_cog(GeneralCommands(bot))
+async def setup(bot):
+    await bot.add_cog(GeneralCommands(bot))

@@ -113,10 +113,10 @@ async def initialize():
     global unlisten
     unlisten = eventbus.add_listener(util.config["irc"]["name"], on_bridge_message)
 
-def setup(bot):
+async def setup(bot):
     asyncio.create_task(initialize())
 
-def teardown(bot=None):
+async def teardown(bot=None):
     if global_conn:
         global_conn.planned_disconnection = True
         global_conn.disconnect()

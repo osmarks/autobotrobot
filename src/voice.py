@@ -16,7 +16,7 @@ class HTTPSource(discord.AudioSource):
     def read(self): return next(self.packets, b"")
     def is_opus(self): return True
 
-def setup(bot):
+async def setup(bot):
     # experimental, thus limit to me only
     @bot.group()
     @commands.check(util.admin_check)
@@ -43,11 +43,11 @@ def setup(bot):
 
     @radio.command()
     async def disconnect(ctx):
-        if ctx.guild.voice_client: 
+        if ctx.guild.voice_client:
             ctx.guild.voice_client.stop()
             await ctx.guild.voice_client.disconnect()
 
-def teardown(bot):
+async def teardown(bot):
     for guild in bot.guilds:
         if guild.voice_client:
             guild.voice_client.stop()

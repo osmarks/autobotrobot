@@ -5,7 +5,7 @@ import discord
 
 import metrics
 
-def setup(bot):
+async def setup(bot):
 	@bot.listen()
 	async def on_member_join(member):
 		if member.guild and member.guild.id == util.config["heavserver"]["id"]:

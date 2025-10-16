@@ -6,7 +6,7 @@ from discord.ext import commands
 import util
 import eventbus
 
-def setup(bot):
+async def setup(bot):
     @bot.group(help="Debug/random messing around utilities. Owner-only.")
     @commands.check(util.admin_check)
     async def magic(ctx):
@@ -76,6 +76,6 @@ def setup(bot):
     @magic.command(help="Reload extensions (all or the specified one).")
     async def reload_ext(ctx, ext="all"):
         if ext == "all":
-            for ext in util.extensions: bot.reload_extension(ext)
-        else: bot.reload_extension(ext)
+            for ext in util.extensions: await bot.reload_extension(ext)
+        else: await bot.reload_extension(ext)
         await ctx.send("Done!")

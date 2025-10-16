@@ -135,7 +135,7 @@ class Telephone(commands.Cog):
                 reply = (eventbus.AuthorInfo(replying_to.author.name, replying_to.author.id, str(replying_to.author.display_avatar.url), replying_to.author.bot), parse_formatting(self.bot, replying_to.content))
             else:
                 reply = (None, None)
-        msg = eventbus.Message(eventbus.AuthorInfo(msg.author.name, msg.author.id, str(msg.author.display_avatar.url), msg.author.bot), 
+        msg = eventbus.Message(eventbus.AuthorInfo(msg.author.name, msg.author.id, str(msg.author.display_avatar.url), msg.author.bot),
             parse_formatting(self.bot, msg.content), ("discord", channel_id), msg.id, [ at for at in msg.attachments if not at.is_spoiler() ], reply=reply)
         await eventbus.push(msg)
 
@@ -315,7 +315,7 @@ When you want to end a call, use hangup.
             return await ctx.send(embed=util.error_embed("Target channel no longer exists."))
         _, call_message = await asyncio.gather(
             ctx.send(embed=util.info_embed("Outgoing call", f"Dialing {address}...")),
-            recv_channel.send(embed=util.info_embed("Incoming call", 
+            recv_channel.send(embed=util.info_embed("Incoming call",
                 f"Call from {originating_address}. Click :white_check_mark: to accept or :negative_squared_cross_mark: to decline."))
         )
         # add clickable reactions to it
@@ -429,7 +429,7 @@ When you want to end a call, use hangup.
         finally:
             os.unlink(tmppath)
 
-def setup(bot):
+async def setup(bot):
     cog = Telephone(bot)
-    bot.add_cog(cog)
+    await bot.add_cog(cog)
     asyncio.create_task(cog.initial_load_webhooks())

@@ -1,16 +1,14 @@
-import asyncio
-import argparse
+
 import random
-from numpy.random import default_rng
-import re
 import aiohttp
-import subprocess
+from collections import defaultdict, deque
 import discord.ext.commands as commands
 import discord
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+import asyncio
+import logging
 
-import tio
 import util
 
 cleaner = commands.clean_content()
@@ -20,7 +18,11 @@ def clean(ctx, text):
 class Sentience(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.timeouts = {}
         self.session = aiohttp.ClientSession()
+        self.autopraise_spontaneous_times = {}
+        self.autopraise_triggered_times = {}
+        self.praise_context_buffers = defaultdict(deque)
 
     async def serialize_history(self, ctx, n=20):
         PREFIXES = [ ctx.prefix + "ai", ctx.prefix + "ag", ctx.prefix + "autogollark", ctx.prefix + "gollark" ]
@@ -52,11 +54,19 @@ class Sentience(commands.Cog):
 
     @commands.command(help="Highly advanced AI Assistant.")
     async def ai(self, ctx, *, query=None):
+        if timeout := self.timeouts.get(ctx.channel.id):
+            if timeout > datetime.now():
+                return
         prompt = await self.serialize_history(ctx)
-        prompt.append(f'[{util.render_time(datetime.utcnow())}] {util.config["ai"]["own_name"]}:')
+        prompt.append(f'[{util.render_time(datetime.now(timezone.utc))}] {util.config["ai"]["own_name"]}:')
         generation = await util.generate(self.session, util.config["ai"]["prompt_start"] + "".join(prompt))
-        if generation.strip():
-            await ctx.send(generation.strip())
+        assert generation, "backend failed"
+        generation = generation.strip()
+        if generation:
+            await ctx.send(generation)
+        if generation.endswith("/quit"):
+            await ctx.send("Disconnecting AI as requested.")
+            self.timeouts[ctx.channel.id] = datetime.now() + timedelta(seconds=1200)
 
     @commands.command(help="Search meme library.", aliases=["memes"])
     async def meme(self, ctx, *, query=None):
@@ -74,5 +84,46 @@ class Sentience(commands.Cog):
             o_files = [ discord.File(Path(util.config["memetics"]["memes_local"]) / util.meme_thumbnail(results, m)) for m in mat ]
         await ctx.send(files=o_files)
 
-def setup(bot):
-    bot.add_cog(Sentience(bot))
+    async def spontaneous_praise(self, target, delay):
+        await asyncio.sleep(delay)
+        del self.autopraise_spontaneous_times[target["user"]]
+        await self.praise(target, target["spontaneous_channel"], util.config["autopraise"]["spontaneous_prompt"])
+
+    async def praise(self, target, channel, prompt):
+        chan = self.bot.get_channel(channel)
+        if chan:
+            context = "\n".join(self.praise_context_buffers[target["user"]])
+            praise_message = await util.generate_raw_chatcompletion(self.session, util.config["ai"]["chat_completions"], prompt + "\n" + context)
+            praise_message = praise_message.strip()
+            if praise_message and praise_message != util.config["autopraise"]["no_praise"]:
+                await chan.send(praise_message)
+            else:
+                # if no praise occurred, reset the timer
+                del self.autopraise_triggered_times[target["user"]]
+
+    @commands.Cog.listener("on_message")
+    async def auto_praise(self, msg):
+        now = util.timestamp()
+        # if anyone uses this, rearrange to dict users → spec, for efficiency
+        for target in util.config["autopraise"]["targets"]:
+            if target["guild"] == msg.guild.id and target["user"] == msg.author.id:
+                if msg.channel.id in target["channels"]:
+                    if msg.content and msg.content.strip(): self.praise_context_buffers[msg.author.id].append(f"{msg.author.name}: {msg.content.strip()}")
+                    if len(self.praise_context_buffers[msg.author.id]) >= target["context_length"]:
+                        self.praise_context_buffers[msg.author.id].popleft()
+
+                    # no spontaneous praise event within window: dispatch
+                    if msg.author.id not in self.autopraise_spontaneous_times:
+                        logging.info("Scheduling spontaneous praise for %d", msg.author.id)
+                        spontaneous_praise_delay = random.expovariate(target["spontaneous_interval"] / 2) + target["spontaneous_interval"] / 2
+                        self.autopraise_spontaneous_times[msg.author.id] = now + spontaneous_praise_delay
+                        asyncio.create_task(self.spontaneous_praise(target, spontaneous_praise_delay))
+
+                    may_praise_at = self.autopraise_triggered_times.get(msg.author.id)
+                    if may_praise_at is None or may_praise_at < now:
+                        logging.info("Triggered praise event for %d", msg.author.id)
+                        self.autopraise_triggered_times[msg.author.id] = now + target["triggered_interval"]
+                        await self.praise(target, msg.channel.id, util.config["autopraise"]["triggered_prompt"])
+
+async def setup(bot):
+    await bot.add_cog(Sentience(bot))

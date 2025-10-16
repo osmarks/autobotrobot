@@ -18,7 +18,7 @@ class Parser(html.parser.HTMLParser):
         attrs = dict(attrs)
         if tag == "a" and attrs.get("class") == "result__a" and "https://duckduckgo.com/y.js?ad_provider" not in attrs["href"]:
             self.links.append(attrs["href"])
-    
+
 class Search(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -43,7 +43,7 @@ class Search(commands.Cog):
                         return await ctx.send(p.links[0], reference=ctx.message)
                     except IndexError:
                         return await ctx.send("No results.", reference=ctx.message)
-    
+
     async def wp_search(self, query):
         async with self.session.get("https://en.wikipedia.org/w/api.php",
             params={ "action": "query", "list": "search", "srsearch": query, "utf8": "1", "format": "json", "srlimit": 1 }) as resp:
@@ -62,10 +62,10 @@ class Search(commands.Cog):
                 return await self.wp_fetch(new_page, fallback=False)
 
         if page in self.wp_cache: return self.wp_cache[page]
-        if page in self.wp_search_cache: 
+        if page in self.wp_search_cache:
             if self.wp_search_cache[page] is None: return None
             return await self.wp_fetch(self.wp_search_cache[page], fallback=False)
-        async with self.session.get("https://en.wikipedia.org/w/api.php", 
+        async with self.session.get("https://en.wikipedia.org/w/api.php",
             params={ "action": "query", "format": "json", "titles": page, "prop": "extracts", "exintro": 1, "explaintext": 1 }) as resp:
             data = (await resp.json())["query"]
         if "-1" in data["pages"]:
@@ -94,6 +94,6 @@ class Search(commands.Cog):
         if self.pool is not None:
             self.pool.shutdown()
 
-def setup(bot):
+async def setup(bot):
     cog = Search(bot)
-    bot.add_cog(cog)
+    await bot.add_cog(cog)

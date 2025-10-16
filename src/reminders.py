@@ -71,7 +71,7 @@ class Reminders(commands.Cog):
             await ctx.send(embed=util.error_embed("Invalid time (wrong format/too large months or years)"))
             return
         utc_time, local_time = util.in_timezone(time, tz)
-        id = (await self.bot.database.execute_insert("INSERT INTO reminders (remind_timestamp, created_timestamp, reminder, expired, extra) VALUES (?, ?, ?, ?, ?)", 
+        id = (await self.bot.database.execute_insert("INSERT INTO reminders (remind_timestamp, created_timestamp, reminder, expired, extra) VALUES (?, ?, ?, ?, ?)",
             (utc_time.timestamp(), now.timestamp(), reminder, 0, util.json_encode(extra_data))))["last_insert_rowid()"]
         await self.bot.database.commit()
         await ctx.send(f"Reminder scheduled for {util.format_time(local_time)} ({util.format_timedelta(now, utc_time)}).")
@@ -178,10 +178,10 @@ class Reminders(commands.Cog):
                     self.reminder_queue.pop(0)
                     await self.fire_reminder(next_id)
 
-def setup(bot):
+async def setup(bot):
     cog = Reminders(bot)
+    await bot.add_cog(cog)
     asyncio.create_task(cog.init_reminders())
-    bot.add_cog(cog)
 
-def teardown(bot):
+async def teardown(bot):
     bot.rloop_task.cancel()

@@ -15,7 +15,7 @@ Achievement = collections.namedtuple("Achievement", ["name", "condition", "descr
 achievements = {
     "spectre_of_communism": Achievement("Containment Efforts Ongoing", "Refer to the 'spectre of communism' in a message.", "A spectre is haunting Europe. The spectre of communism. Containment efforts are ongoing and full containment is projected by 2036."),
     "test": Achievement("Test", "Test achievement. Obtained for testing.", "Great job, you ran the test command!"),
-    "spam": Achievement("beesbeesbeesbeesbeesbeesbeesbeesbees", "Send a long message containing the same thing repeatedly.", "You should probably not do this, nobody* likes spam!"),
+    "spam": Achievement("beesbeesbeesbeesbeesbeesbeesbeesbees", "Send a long message containing the same thing repeatedly.", "You should probably not do this; nobody* likes spam!"),
     "unicode_abuse": Achievement("Anomalous Unicode", "Send a high proportion of weird Unicode characters in a message.", "h̵͖̻̮̗̹̆͛͆̎ͮͤͫ͛ͦ̓̅ͤ́͢é͒ͧ̌̀ͪ̈͂̈́̉ͣ̅̿̄̌̋̿̽̚͏̛͏͚̯͉̟͇̼̹͎ͅa̠̹̘͎̫̜̞̩͖̟̟͍͇͈͍̝͕͛ͥ͊̾̈́ͩͯͩͭ̆̋͐͗̉͋̓̀͝v͎͖̜͎͔̞͚͉̺̞̘̥͖̝͚̺̍ͤ̌͂ͨ̃̅ͫ̿͛ͯ̓̉̆̎͊̀̚̕͟s̪̠̟̣̝̹̭̻̈́ͤ͗̏ͮ̂ͯ̈́̊ͩ̓̆̌̆͌̽̓̈́̚͢͞e̛̞̙̜̗̰͕͕͎̺͍̭̲̟̭̲̫̬͓ͯ̅̓̆̂̔̃͟r̷̛̮̮͇̳̳̾ͯͮͩ̏͂ͤ̿̽ͧ͒͋́̕ͅͅv̴̠͉̼̮̭̘ͪͯͦ͌́ͯ̒̃̀́̃͜͝ͅe̵̷̢͕̣̻̥̲͓̼͍̱͕̮̯̱̤̹̱̝̎̓̈́̿ͤ̔̍ͭͭ͐ͅŗ̔ͮͯ͂́͏̻͈̱ͅ ̣͇̼͊̄ͫ̆̍̄̀̀̓͊͐͋̌͘͠į̱͔̰̭̫̱̫̊ͪ̅ͥ̈́ͥ̐͌̅ͪ̅ͨ̎̀͘͝s̍͑̌̋̅͌͂ͨͬͯ̇͊҉̛̱̺͕̰͓̗̖̬͡͡ ̥̤̺̖̪̪́ͯͣ̏̅̈ͣ̿̀͠͠͞i̢̛̭̰̻͈̦̣̮̞̤̩̊̌̾͛ͭͦ̆ͮ̃̎ͪ̔ͬ͊̆͂ͫͅn̸̖͚̣̪̩̏ͥ̈́̅ͯ̔͆́ͦ͗͛͒̃̃ͫ͟͜͝͠ȩ̸͎̟̣̞͉̫̗̙̻̯͍̰̣̌ͪͨ͛̆̕͡v̙͙̲͕͔̦̣̺͔̖͉̜̲̩̈̿ͥ̎͊̈́̊ͯͯ͒ͭ̊̀͢i̪͈̣̱̞̥̰̟̣̩̼̻̪̳̤͇̻̹͉͗ͭ͆̆̎̀͑͑̆͋̏̏͊ͣͦ͆ͣ̈́̓͟͢ţ̵̘̫̯͓̻̗͕̘͙̯̞̪̪̲̤̬̜͕ͫ̄̌̓̎͌ͧ̔͟͢ͅa̸̧̭̲̯̳̔́͋̐͂̇ͪ̔̐́̚͢b͐̅̔ͭ͗̊̂̾̀̓ͭͭ͑ͤ̏̐̃ͩͬ҉̞̼̮̤̝̲̳͓̗̤̫̭̝̹̙͘͟͝ļ̷͈̭̖͓̜̬͔̻͔̀̎ͯ͗̐̽̏ͦ̊͗ͧ́͘ͅe̢͍̦̗̬̝̠͔̳̣̯̮̣̹͍͙̞̜ͣ̉͆̊̀̎ͦ͌̂̋̊ͨ͛́"),
     "rtfm": Achievement("RTFM", "Tell someone to read the documentation.", "Apparently, people won't do this without prompting half the time."),
     "error": Achievement("You broke it", "Cause an internal error in the bot", "I should probably fix this.")
@@ -48,7 +48,7 @@ async def achieve(bot: commands.Bot, message: discord.Message, achievement):
     await bot.database.commit()
     logging.info("Awarded achievement %s to %s", achievement, message.author.name)
 
-def setup(bot):
+async def setup(bot):
     @bot.group(name="achievements", aliases=["ach", "achieve", "achievement"], brief="Achieve a wide variety of fun achievements!", help=f"""
     Do things and get arbitrary achievements for them!
     Note that due to reasons messages for achievements will not be shown except in opted-in servers, although achievements will be gained regardless.
