@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import asyncio
 import logging
+import re
 
 import util
 
@@ -64,6 +65,13 @@ class Sentience(commands.Cog):
         generation = generation.strip()
         if generation:
             await ctx.send(generation)
+
+            reminders_cog = self.bot.get_cog("Reminders")
+            if reminders_cog:
+                reminder_timestamp = re.search(r"scheduled for (\d+-\d{2}-\d{2} \d{2}:\d{2}:\d{2})", generation)
+                if reminder_timestamp:
+                    await reminders_cog.remind(ctx, time=reminder_timestamp.group(1), reminder=query or generation, notify=False)
+
         if generation.endswith("/quit"):
             await ctx.send("Disconnecting AI as requested.")
             self.timeouts[ctx.channel.id] = datetime.now() + timedelta(seconds=1200)
@@ -97,6 +105,7 @@ class Sentience(commands.Cog):
             praise_message = praise_message.strip()
             if praise_message and praise_message != util.config["autopraise"]["no_praise"]:
                 await chan.send(praise_message)
+                self.praise_context_buffers[target["user"]].append(f"{util.config["ai"]["own_name"]}: {msg.content.strip()}")
             else:
                 # if no praise occurred, reset the timer
                 del self.autopraise_triggered_times[target["user"]]
@@ -114,8 +123,8 @@ class Sentience(commands.Cog):
 
                     # no spontaneous praise event within window: dispatch
                     if msg.author.id not in self.autopraise_spontaneous_times:
-                        logging.info("Scheduling spontaneous praise for %d", msg.author.id)
                         spontaneous_praise_delay = random.expovariate(target["spontaneous_interval"] / 2) + target["spontaneous_interval"] / 2
+                        logging.info("Scheduling spontaneous praise for %d delay %f", msg.author.id, spontaneous_praise_delay)
                         self.autopraise_spontaneous_times[msg.author.id] = now + spontaneous_praise_delay
                         asyncio.create_task(self.spontaneous_praise(target, spontaneous_praise_delay))
 

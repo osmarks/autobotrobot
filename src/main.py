@@ -113,7 +113,7 @@ async def run_bot():
     await bot.start(config["token"])
 
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
     loop.create_task(prometheus_async.aio.web.start_http_server(port=config["metrics_port"]))
     loop.create_task(run_bot())
     try:

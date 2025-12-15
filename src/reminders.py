@@ -51,7 +51,7 @@ class Reminders(commands.Cog):
     Thanks to new coding and algorithms, reminders are now not done at minute granularity. However, do not expect sub-5s granularity due to miscellaneous latency which has not been a significant target of optimization.
     Note that due to technical limitations reminders beyond the year 10000 CE or in the past cannot currently be handled.
     Note that reminder delivery is not guaranteed, due to possible issues including but not limited to: data loss, me eventually not caring, the failure of Discord (in this case message delivery will still be attempted manually on a case-by-case basis), the collapse of human civilization, or other existential risks.""")
-    async def remind(self, ctx, time, *, reminder):
+    async def remind(self, ctx, time, *, reminder, notify=True):
         reminder = reminder.strip()
         if len(reminder) > 512:
             await ctx.send(embed=util.error_embed("Maximum reminder length is 512 characters", "Foolish user error"))
@@ -74,7 +74,7 @@ class Reminders(commands.Cog):
         id = (await self.bot.database.execute_insert("INSERT INTO reminders (remind_timestamp, created_timestamp, reminder, expired, extra) VALUES (?, ?, ?, ?, ?)",
             (utc_time.timestamp(), now.timestamp(), reminder, 0, util.json_encode(extra_data))))["last_insert_rowid()"]
         await self.bot.database.commit()
-        await ctx.send(f"Reminder scheduled for {util.format_time(local_time)} ({util.format_timedelta(now, utc_time)}).")
+        if notify: await ctx.send(f"Reminder scheduled for {util.format_time(local_time)} ({util.format_timedelta(now, utc_time)}).")
         self.insert_reminder(id, utc_time.timestamp())
 
     def insert_reminder(self, id, time):
