@@ -96,6 +96,8 @@ async def autogollark(ctx, session):
 async def on_message(message):
     if message.channel.id in util.config["autogollark"]["channels"] and not message.author == bot.user:
         await autogollark(commands.Context(bot=bot, message=message, prefix="", view=None), bot.session)
+    elif bot.user.mentioned_in(message):
+        await autogollark(commands.Context(bot=bot, message=message, prefix="", view=None), bot.session)
 
 async def run_bot():
     bot.session = aiohttp.ClientSession()

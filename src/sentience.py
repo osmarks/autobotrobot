@@ -105,7 +105,7 @@ class Sentience(commands.Cog):
             praise_message = praise_message.strip()
             if praise_message and praise_message != util.config["autopraise"]["no_praise"]:
                 await chan.send(praise_message)
-                self.praise_context_buffers[target["user"]].append(f"{util.config["ai"]["own_name"]}: {msg.content.strip()}")
+                self.praise_context_buffers[target["user"]].append(f"{util.config["ai"]["own_name"]}: {praise_message}")
             else:
                 # if no praise occurred, reset the timer
                 del self.autopraise_triggered_times[target["user"]]
@@ -115,7 +115,7 @@ class Sentience(commands.Cog):
         now = util.timestamp()
         # if anyone uses this, rearrange to dict users → spec, for efficiency
         for target in util.config["autopraise"]["targets"]:
-            if target["guild"] == msg.guild.id and target["user"] == msg.author.id:
+            if msg.guild and target["guild"] == msg.guild.id and target["user"] == msg.author.id:
                 if msg.channel.id in target["channels"]:
                     if msg.content and msg.content.strip(): self.praise_context_buffers[msg.author.id].append(f"{msg.author.name}: {msg.content.strip()}")
                     if len(self.praise_context_buffers[msg.author.id]) >= target["context_length"]:
