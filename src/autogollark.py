@@ -43,6 +43,9 @@ async def serialize_history(ctx, n=20):
 
             if content in seen: continue
             seen.add(content)
+        if message.reference:
+            if ref := message.reference.cached_message:
+                prompt.append(f"[replying to {config["autogollark"]["name"] if ref.author == bot.user else ref.author.display_name} at {util.render_time(ref.created_at)}]")
         prompt.append(f"[{util.render_time(message.created_at)}] {display_name}: {content}\n")
         if sum(len(x) for x in prompt) > util.config["ai"]["max_len"]:
             break
@@ -96,7 +99,7 @@ async def autogollark(ctx, session):
 async def on_message(message):
     if message.channel.id in util.config["autogollark"]["channels"] and not message.author == bot.user:
         await autogollark(commands.Context(bot=bot, message=message, prefix="", view=None), bot.session)
-    elif bot.user.mentioned_in(message):
+    elif bot.user.mentioned_in(message) and not message.author == bot.user:
         await autogollark(commands.Context(bot=bot, message=message, prefix="", view=None), bot.session)
 
 async def run_bot():

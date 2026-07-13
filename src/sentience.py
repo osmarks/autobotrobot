@@ -9,6 +9,9 @@ from pathlib import Path
 import asyncio
 import logging
 import re
+import msgpack
+import numpy as np
+import base64
 
 import util
 
@@ -24,6 +27,8 @@ class Sentience(commands.Cog):
         self.autopraise_spontaneous_times = {}
         self.autopraise_triggered_times = {}
         self.praise_context_buffers = defaultdict(deque)
+        self.vecs = np.stack([ np.frombuffer(base64.b64decode(v), dtype=np.float16) for v in util.config["autoban"]["vecs"] ])
+        self.seen_users = defaultdict(lambda: 0)
 
     async def serialize_history(self, ctx, n=20):
         PREFIXES = [ ctx.prefix + "ai", ctx.prefix + "ag", ctx.prefix + "autogollark", ctx.prefix + "gollark" ]
@@ -47,6 +52,9 @@ class Sentience(commands.Cog):
             if message.author == self.bot.user:
                 if content in seen: continue
                 seen.add(content)
+            if message.reference:
+                if ref := message.reference.cached_message:
+                    prompt.append(f"[replying to {util.config["ai"]["own_name"] if ref.author == self.bot.user else ref.author.display_name} at {util.render_time(ref.created_at)}]")
             prompt.append(f"[{util.render_time(message.created_at)}] {display_name}: {content}\n")
             if sum(len(x) for x in prompt) > util.config["ai"]["max_len"]:
                 break
@@ -133,6 +141,36 @@ class Sentience(commands.Cog):
                         logging.info("Triggered praise event for %d", msg.author.id)
                         self.autopraise_triggered_times[msg.author.id] = now + target["triggered_interval"]
                         await self.praise(target, msg.channel.id, util.config["autopraise"]["triggered_prompt"])
+
+    async def encode(self, msg):
+        content_blobs = []
+        for attachment in msg.attachments:
+            if attachment.size < 8_000_000:
+                content = await attachment.read()
+                content_blobs.append(content)
+        if not content_blobs: return
+        async with self.session.post(util.config["autoban"]["clip"], headers={"content-type": "application/msgpack"}, data=msgpack.packb({"images": content_blobs})) as res:
+            data = await res.read()
+            res = msgpack.unpackb(data)
+            return np.stack([ np.frombuffer(x, dtype=np.float16) for x in res ])
+
+    @commands.check(util.admin_check)
+    @commands.command()
+    async def clip_encode(self, ctx):
+        data = (await self.encode(ctx.message)).tobytes()
+        data = base64.b64encode(data).decode("utf-8")
+        print(data)
+
+    @commands.Cog.listener("on_message")
+    async def auto_ban_spammers(self, msg):
+        if msg.guild and msg.guild.id in util.config["autoban"]["servers"] and self.seen_users[msg.guild.id, msg.author.id] < 4 and msg.author.id != self.bot.user.id:
+            logging.info("scanning %d", msg.author.id)
+            vecs = await self.encode(msg)
+            if vecs is not None and ((mat := vecs @ self.vecs.T) > 0.98).any():
+                logging.warning("banning %d", msg.author.id)
+                await msg.guild.ban(reason="spam autodetected")
+                await msg.channel.send(f"User <@{msg.author.id}> was banned for this post ({repr(mat.tolist())}).")
+        self.seen_users[msg.guild.id, msg.author.id] += 1
 
 async def setup(bot):
     await bot.add_cog(Sentience(bot))

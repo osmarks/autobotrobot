@@ -358,12 +358,13 @@ backend_failures = prometheus_client.Counter("abr_llm_backend_failure", "Number 
 async def generate_raw(sess: aiohttp.ClientSession, backend, prompt, stop):
     async with sess.post(backend["url"], json={
         "prompt": prompt,
-        "max_tokens": 200,
+        "max_tokens": 600,
         "stop": stop,
         "client": "abr",
         **backend.get("params", {})
     }, headers=backend.get("headers", {}), timeout=aiohttp.ClientTimeout(total=30)) as res:
         data = await res.json()
+        print(data)
         return data["choices"][0]["text"]
 
 async def generate(sess: aiohttp.ClientSession, prompt, stop=["\n"]):
@@ -386,6 +387,7 @@ async def generate(sess: aiohttp.ClientSession, prompt, stop=["\n"]):
     for backend in backends:
         try:
             result = await generate_raw(sess, backend, prompt, stop)
+            assert result, "internal error"
             backend_successes.labels(backend["url"]).inc()
             failure_stats = last_failures[backend["url"]]
             failure_stats.consecutive_failures = 0
@@ -401,10 +403,11 @@ async def generate_raw_chatcompletion(sess: aiohttp.ClientSession, backend, prom
     async with sess.post(backend["url"], json={
         "messages": [{"role": "user", "content": prompt}],
         "client": "abr",
+        "max_tokens": 4000,
+        "max_output_tokens": 4000,
         **backend.get("params", {})
-    }, headers=backend.get("headers", {}), timeout=aiohttp.ClientTimeout(total=30)) as res:
+    }, headers=backend.get("headers", {}), timeout=aiohttp.ClientTimeout(total=300)) as res:
         data = await res.json()
-        print(data)
         return data["choices"][0]["message"]["content"]
 
 filesafe_charset = string.ascii_letters + string.digits + "-"
