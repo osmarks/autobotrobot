@@ -170,7 +170,8 @@ class Sentience(commands.Cog):
                 logging.warning("banning %d", msg.author.id)
                 await msg.guild.ban(reason="spam autodetected")
                 await msg.channel.send(f"User <@{msg.author.id}> was banned for this post ({repr(mat.tolist())}).")
-        self.seen_users[msg.guild.id, msg.author.id] += 1
+        if msg.guild:
+            self.seen_users[msg.guild.id, msg.author.id] += 1
 
 async def setup(bot):
     await bot.add_cog(Sentience(bot))
